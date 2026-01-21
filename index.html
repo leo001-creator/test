@@ -1,228 +1,652 @@
 <!DOCTYPE html>
 <html lang="lt">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>VIBE CHECK // Tavo Karta</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OMNI-BOARD OS v1.0 // Ultimate Workspace</title>
     
-    <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;500;800&display=swap" rel="stylesheet">
     
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <style>
+        /* =========================================
+           GLOBAL & VARIABLES
+           ========================================= */
         :root {
-            --primary: #F0FF42; /* Neoninė citrininė */
-            --bg: #000000;
-            --surface: #1A1A1A;
-            --text: #FFFFFF;
-            --accent: #5800FF; /* Elektros violetinė */
+            --bg-color: #0f1115;
+            --grid-color: rgba(255, 255, 255, 0.03);
+            --sidebar-bg: #161b22;
+            --accent: #00e5ff;
+            --accent-glow: rgba(0, 229, 255, 0.3);
+            --text-main: #e6edf3;
+            --text-muted: #8b949e;
+            --card-bg: rgba(22, 27, 34, 0.9);
+            --border: 1px solid rgba(255, 255, 255, 0.1);
+            --radius: 12px;
+            --shadow: 0 10px 30px rgba(0,0,0,0.5);
+            --z-note: 10;
+            --z-modal: 1000;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; user-select: none; }
+        
         body {
-            font-family: 'Space Mono', monospace;
-            background-color: var(--bg);
-            color: var(--text);
-            overflow-x: hidden;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            background-image: 
+                linear-gradient(var(--grid-color) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+            background-size: 40px 40px;
+            color: var(--text-main);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+        }
+
+        /* =========================================
+           SIDEBAR (COMMAND CENTER)
+           ========================================= */
+        .sidebar {
+            width: 80px;
+            height: 100%;
+            background: var(--sidebar-bg);
+            border-right: var(--border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 0;
+            z-index: 2000;
+            box-shadow: 5px 0 20px rgba(0,0,0,0.3);
+        }
+
+        .brand {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            color: var(--accent);
+            font-size: 14px;
+            margin-bottom: 40px;
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            transform: rotate(180deg);
+            letter-spacing: 2px;
+        }
+
+        .tool-btn {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 15px;
+            border-radius: 12px;
+            border: none;
+            background: rgba(255,255,255,0.03);
+            color: var(--text-muted);
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .tool-btn:hover, .tool-btn.active {
+            background: var(--accent);
+            color: #000;
+            box-shadow: 0 0 15px var(--accent-glow);
+            transform: scale(1.1);
+        }
+
+        .tool-btn::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            left: 60px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #000;
+            color: var(--accent);
+            padding: 5px 10px;
+            font-size: 10px;
+            border-radius: 4px;
+            opacity: 0;
+            pointer-events: none;
+            white-space: nowrap;
+            transition: 0.2s;
+            font-family: 'JetBrains Mono';
+        }
+
+        .tool-btn:hover::after { opacity: 1; left: 70px; }
+
+        /* =========================================
+           MAIN WORKSPACE
+           ========================================= */
+        #workspace {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
             cursor: crosshair;
         }
 
-        h1, h2, .logo { font-family: 'Unbounded', sans-serif; text-transform: uppercase; }
+        /* --- Canvas Layer (Drawing) --- */
+        #paint-layer {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 1;
+            pointer-events: none; /* Pagal nutylėjimą išjungta */
+        }
+        #paint-layer.active { pointer-events: auto; cursor: url('data:image/svg+xml;utf8,<svg width="24" height="24" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="4"/></svg>') 12 12, auto; }
 
-        /* --- TRIUKŠMO EFEKTAS (Overlay) --- */
-        .noise {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: url('https://upload.wikimedia.org/wikipedia/commons/7/76/1k_Noise_Texture.png');
-            opacity: 0.05; pointer-events: none; z-index: 9999;
+        /* --- Draggable Notes --- */
+        .note {
+            position: absolute;
+            width: 220px;
+            min-height: 180px;
+            background: var(--card-bg);
+            border: var(--border);
+            border-radius: var(--radius);
+            backdrop-filter: blur(10px);
+            padding: 0;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: box-shadow 0.2s, transform 0.1s;
         }
 
-        /* --- NAVIGACIJA --- */
-        nav {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 20px 40px; border-bottom: 2px solid var(--primary);
-            position: sticky; top: 0; background: var(--bg); z-index: 100;
+        .note:active { cursor: grabbing; }
+        .note.dragging { opacity: 0.9; transform: scale(1.02); z-index: 999 !important; }
+
+        .note-header {
+            padding: 10px 15px;
+            background: rgba(255,255,255,0.03);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            border-radius: 12px 12px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: grab;
         }
 
-        .logo { font-weight: 900; font-size: 1.5rem; color: var(--primary); }
-        .nav-links a { 
-            color: var(--text); text-decoration: none; margin-left: 20px; 
-            font-size: 0.9rem; transition: 0.3s;
-        }
-        .nav-links a:hover { color: var(--primary); text-decoration: underline; }
-
-        /* --- HERO SEKCIJA --- */
-        .hero {
-            height: 85vh; display: flex; flex-direction: column;
-            justify-content: center; align-items: center; text-align: center;
-            padding: 40px; position: relative;
+        .note-status {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: var(--accent);
+            box-shadow: 0 0 5px var(--accent);
         }
 
-        .hero h1 { 
-            font-size: clamp(3rem, 12vw, 10rem); line-height: 0.8; 
-            z-index: 2; mix-blend-mode: difference;
+        .note-controls i {
+            margin-left: 8px;
+            cursor: pointer;
+            color: var(--text-muted);
+            font-size: 12px;
+            transition: color 0.2s;
+        }
+        .note-controls i:hover { color: #ff4c4c; }
+
+        .note-body {
+            flex: 1;
+            padding: 15px;
         }
 
-        .floating-img {
-            position: absolute; width: 300px; height: 400px;
-            background: url('https://images.unsplash.com/photo-1529139513402-e209979b1a8c?auto=format&fit=crop&w=800&q=80') center/cover;
-            top: 20%; right: 10%; opacity: 0.6; z-index: 1;
-            filter: grayscale(1); transition: 0.5s;
-        }
-        .hero:hover .floating-img { filter: grayscale(0); transform: scale(1.05); }
-
-        /* --- BĖGANTI EILUTĖ --- */
-        .marquee {
-            background: var(--primary); color: #000; padding: 15px 0;
-            font-weight: 900; overflow: hidden; white-space: nowrap;
-            border-top: 2px solid #000; border-bottom: 2px solid #000;
-        }
-        .marquee div { display: inline-block; animation: marquee 20s linear infinite; }
-        @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-
-        /* --- TURINYS --- */
-        .container { padding: 80px 40px; max-width: 1400px; margin: 0 auto; }
-
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px; }
-
-        .article-card {
-            background: var(--surface); padding: 0; position: relative;
-            border: 2px solid transparent; transition: 0.3s;
-        }
-        .article-card:hover { border-color: var(--accent); transform: translate(-10px, -10px); box-shadow: 10px 10px 0 var(--accent); }
-
-        .article-img { height: 250px; background-color: #333; overflow: hidden; }
-        .article-img img { width: 100%; height: 100%; object-fit: cover; filter: contrast(1.2); }
-        
-        .article-info { padding: 25px; }
-        .tag { display: inline-block; background: var(--accent); padding: 2px 8px; font-size: 0.7rem; margin-bottom: 10px; }
-        .article-info h3 { font-size: 1.5rem; margin-bottom: 15px; }
-
-        /* --- INTERAKTYVI DALIS --- */
-        .vibe-meter {
-            background: var(--surface); border: 2px dashed var(--primary);
-            padding: 60px; text-align: center; margin-top: 100px;
+        .note-textarea {
+            width: 100%; height: 100%;
+            background: transparent; border: none;
+            resize: none; color: var(--text-main);
+            font-family: 'Inter'; font-size: 14px; line-height: 1.5;
         }
 
-        #btn-vibe {
-            background: var(--primary); border: none; padding: 20px 40px;
-            font-family: 'Unbounded'; font-weight: 900; cursor: pointer;
-            font-size: 1.2rem; transition: 0.2s;
+        /* --- Widgets (Floating Windows) --- */
+        .widget {
+            position: absolute;
+            background: #1c2128;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+            z-index: 100;
+            overflow: hidden;
+            display: none; /* Hidden by default */
         }
-        #btn-vibe:active { transform: scale(0.9); }
+        .widget.visible { display: block; animation: slideUp 0.3s ease; }
 
-        footer { padding: 60px 40px; border-top: 1px solid #333; display: flex; justify-content: space-between; }
-
-        /* --- MOBILE TWEAKS --- */
-        @media (max-width: 768px) {
-            nav { padding: 20px; }
-            .hero h1 { font-size: 4rem; }
-            .floating-img { display: none; }
-            footer { flex-direction: column; gap: 20px; }
+        .widget-header {
+            background: #2d333b;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 700;
+            display: flex; justify-content: space-between;
+            cursor: grab;
+            color: var(--text-muted);
         }
+
+        /* --- Calculator Widget --- */
+        .calc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; padding: 10px; }
+        .calc-btn {
+            padding: 15px; background: #30363d; border: none; color: #fff;
+            border-radius: 4px; cursor: pointer; font-family: 'JetBrains Mono';
+        }
+        .calc-btn:hover { background: #444c56; }
+        .calc-btn.accent { background: var(--accent); color: #000; font-weight: bold; }
+        .calc-display {
+            width: 100%; padding: 15px; background: #0d1117; color: var(--accent);
+            text-align: right; font-family: 'JetBrains Mono'; font-size: 18px; border: none;
+        }
+
+        /* --- Music Widget --- */
+        .music-player { padding: 20px; width: 250px; text-align: center; }
+        .visualizer {
+            display: flex; justify-content: center; gap: 4px; height: 40px; margin-bottom: 15px; align-items: flex-end;
+        }
+        .bar { width: 6px; background: var(--accent); animation: equalizer 0.5s infinite ease-in-out; }
+        .bar:nth-child(2) { animation-delay: 0.1s; }
+        .bar:nth-child(3) { animation-delay: 0.2s; }
+        .bar:nth-child(4) { animation-delay: 0.3s; }
+        .bar:nth-child(5) { animation-delay: 0.1s; }
+        .track-info { font-size: 12px; margin-bottom: 10px; color: var(--text-muted); }
+
+        /* =========================================
+           SYSTEM LOG (CONSOLE)
+           ========================================= */
+        .sys-log {
+            position: fixed;
+            bottom: 0; left: 80px; right: 0;
+            height: 30px;
+            background: #0d1117;
+            border-top: 1px solid #30363d;
+            display: flex; align-items: center; padding: 0 15px;
+            font-family: 'JetBrains Mono'; font-size: 11px; color: #58a6ff;
+            z-index: 5000;
+            overflow: hidden;
+        }
+        .blinking-cursor::after { content: '_'; animation: blink 1s infinite; }
+
+        /* =========================================
+           ANIMATIONS & KEYFRAMES
+           ========================================= */
+        @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes equalizer { 0% { height: 5px; } 50% { height: 35px; } 100% { height: 5px; } }
+        @keyframes blink { 50% { opacity: 0; } }
+
+        /* =========================================
+           STATS OVERLAY
+           ========================================= */
+        .stats-overlay {
+            position: absolute; top: 20px; right: 20px;
+            background: rgba(0,0,0,0.5); padding: 10px 20px; border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.1); font-size: 12px; font-weight: 600;
+            display: flex; gap: 20px; pointer-events: none;
+        }
+        .stat-item i { color: var(--accent); margin-right: 5px; }
+
     </style>
 </head>
 <body>
 
-    <div class="noise"></div>
+    <nav class="sidebar">
+        <div class="brand">OMNI-OS</div>
+        
+        <button class="tool-btn" id="btn-add-note" data-tooltip="Naujas Lapukas">
+            <i class="fa-solid fa-plus"></i>
+        </button>
+        
+        <button class="tool-btn" id="btn-paint" data-tooltip="Piešimo Režimas">
+            <i class="fa-solid fa-paintbrush"></i>
+        </button>
 
-    <nav>
-        <div class="logo">VIBE*CHECK</div>
-        <div class="nav-links">
-            <a href="#">MADA</a>
-            <a href="#">MUZIKA</a>
-            <a href="#">TECH</a>
-            <a href="#">STILIUS</a>
-        </div>
+        <button class="tool-btn" id="btn-calc" data-tooltip="Kalkuliatorius">
+            <i class="fa-solid fa-calculator"></i>
+        </button>
+
+        <button class="tool-btn" id="btn-music" data-tooltip="LoFi Grotuvas">
+            <i class="fa-solid fa-music"></i>
+        </button>
+        
+        <button class="tool-btn" id="btn-game" data-tooltip="Clicker Žaidimas">
+            <i class="fa-solid fa-gamepad"></i>
+        </button>
+
+        <div style="flex:1"></div> <button class="tool-btn" id="btn-clear" data-tooltip="Išvalyti Viska">
+            <i class="fa-solid fa-trash-can"></i>
+        </button>
     </nav>
 
-    <header class="hero">
-        <div class="floating-img"></div>
-        <h1>TIKRAI<br><span style="color: var(--primary);">NE</span><br>FAKE.</h1>
-        <p style="margin-top: 30px; max-width: 400px; font-weight: bold;">Gen-Z balsas. Skaitmeninė kultūra be filtrų. Tik tai, kas svarbu dabar.</p>
-    </header>
-
-    <div class="marquee">
-        <div>
-            KAS NAUJO? // AI MENAS // SUSTAINABLE FASHION // VILNIUS NIGHTLIFE // CYBERPUNK 2026 // KAS NAUJO? // AI MENAS // SUSTAINABLE FASHION // VILNIUS NIGHTLIFE // CYBERPUNK 2026 //
+    <main id="workspace">
+        <div class="stats-overlay">
+            <div class="stat-item"><i class="fa-solid fa-layer-group"></i>Objektai: <span id="stat-count">0</span></div>
+            <div class="stat-item"><i class="fa-solid fa-clock"></i>Laikas: <span id="stat-time">00:00</span></div>
+            <div class="stat-item"><i class="fa-solid fa-memory"></i>Atmintis: <span id="stat-mem">OK</span></div>
         </div>
-    </div>
 
-    <main class="container">
-        <div class="grid">
-            <div class="article-card">
-                <div class="article-img">
-                    <img src="https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=800&q=80" alt="Retro tech">
-                </div>
-                <div class="article-info">
-                    <span class="tag">TECH</span>
-                    <h3>Kodėl kasetės grįžta į madą?</h3>
-                    <p>Analoginis garsas vėl užkariauja mūsų ausines. Ar tai tik nostalgija?</p>
-                </div>
+        <canvas id="paint-layer"></canvas>
+
+        <div class="widget" id="widget-calc" style="top: 100px; left: 100px; width: 220px;">
+            <div class="widget-header">
+                <span><i class="fa-solid fa-terminal"></i> CALC_v2.exe</span>
+                <i class="fa-solid fa-xmark" onclick="toggleWidget('widget-calc')"></i>
             </div>
-
-            <div class="article-card">
-                <div class="article-img">
-                    <img src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=800&q=80" alt="Style">
-                </div>
-                <div class="article-info">
-                    <span class="tag">MADA</span>
-                    <h3>Gatvės stilius: Vilnius vs Berlin</h3>
-                    <p>Fiksuojame geriausius derinius gatvėse. Brutalizmas madoje.</p>
-                </div>
-            </div>
-
-            <div class="article-card">
-                <div class="article-img">
-                    <img src="https://images.unsplash.com/photo-1493225255756-d9584f8606e9?auto=format&fit=crop&w=800&q=80" alt="Music">
-                </div>
-                <div class="article-info">
-                    <span class="tag">MUZIKA</span>
-                    <h3>Hyper-pop ateitis</h3>
-                    <p>Nuo SOPHIE iki 100 gecs. Kaip garsas tapo skaitmeniniu chaosu.</p>
-                </div>
+            <input type="text" class="calc-display" id="calc-display" readonly value="0">
+            <div class="calc-grid">
+                <button class="calc-btn" onclick="calcInput('7')">7</button>
+                <button class="calc-btn" onclick="calcInput('8')">8</button>
+                <button class="calc-btn" onclick="calcInput('9')">9</button>
+                <button class="calc-btn accent" onclick="calcOp('/')">/</button>
+                <button class="calc-btn" onclick="calcInput('4')">4</button>
+                <button class="calc-btn" onclick="calcInput('5')">5</button>
+                <button class="calc-btn" onclick="calcInput('6')">6</button>
+                <button class="calc-btn accent" onclick="calcOp('*')">*</button>
+                <button class="calc-btn" onclick="calcInput('1')">1</button>
+                <button class="calc-btn" onclick="calcInput('2')">2</button>
+                <button class="calc-btn" onclick="calcInput('3')">3</button>
+                <button class="calc-btn accent" onclick="calcOp('-')">-</button>
+                <button class="calc-btn" onclick="calcInput('0')">0</button>
+                <button class="calc-btn" onclick="calcClear()">C</button>
+                <button class="calc-btn" onclick="calcResult()">=</button>
+                <button class="calc-btn accent" onclick="calcOp('+')">+</button>
             </div>
         </div>
 
-        <section class="vibe-meter">
-            <h2 style="margin-bottom: 20px;">VIBE CHECKERIS</h2>
-            <p style="margin-bottom: 40px;">Ar tavo diena šiandien turi gerą vibe'ą?</p>
-            <button id="btn-vibe">PASPAUSK MANE</button>
-            <h1 id="vibe-result" style="margin-top: 30px; color: var(--primary);"></h1>
-        </section>
+        <div class="widget" id="widget-music" style="top: 400px; left: 100px;">
+            <div class="widget-header">
+                <span><i class="fa-solid fa-wave-square"></i> LOFI_RADIO</span>
+                <i class="fa-solid fa-xmark" onclick="toggleWidget('widget-music')"></i>
+            </div>
+            <div class="music-player">
+                <div class="visualizer">
+                    <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+                    <div class="bar"></div><div class="bar"></div>
+                </div>
+                <div class="track-info">Dabar groja: <b>"Cyber Rain"</b></div>
+                <button class="calc-btn accent" style="width:100%" onclick="logSystem('Muzika sustabdyta (simuliacija)')">PAUSE / PLAY</button>
+            </div>
+        </div>
+
+        <div class="widget" id="widget-game" style="top: 200px; left: 400px; width: 200px;">
+            <div class="widget-header">
+                <span><i class="fa-solid fa-gamepad"></i> IDLE_MINER</span>
+                <i class="fa-solid fa-xmark" onclick="toggleWidget('widget-game')"></i>
+            </div>
+            <div style="padding: 20px; text-align: center; color: white;">
+                <h2 id="game-score" style="font-size: 32px; margin-bottom: 10px; color: var(--accent);">0</h2>
+                <button class="tool-btn active" style="width: 100%; border-radius: 4px;" onclick="updateGame()">CLICK</button>
+            </div>
+        </div>
+
     </main>
 
-    <footer>
-        <div class="logo">VIBE*CHECK</div>
-        <div>
-            <p>Sek mus: @vibecheck.lt</p>
-            <p>2026 © Tavo Erdvė</p>
-        </div>
-        <div>
-            <p>Kontaktai: hello@vibecheck.lt</p>
-        </div>
-    </footer>
+    <div class="sys-log">
+        <span class="blinking-cursor">> SYSTEM READY. WAITING FOR INPUT... </span>
+        <span id="log-content" style="margin-left: 10px; color: #fff;"></span>
+    </div>
 
     <script>
-        // Interaktyvus vibe tikrintojas
-        const vibeBtn = document.getElementById('btn-vibe');
-        const result = document.getElementById('vibe-result');
-        const vibes = ['100% LIT', 'NO CAP, GOOD', 'MID.', 'SLAY', 'FIRE 🔥', 'SUS.', 'CHILLIN'];
+        /* =========================================
+           CORE SYSTEM LOGIC
+           ========================================= */
+        
+        // System State
+        const state = {
+            zIndex: 100,
+            notes: [],
+            isPainting: false,
+            paintColor: '#00e5ff',
+            gameScore: 0
+        };
 
-        vibeBtn.addEventListener('click', () => {
-            const randomVibe = vibes[Math.floor(Math.random() * vibes.length)];
-            result.innerText = randomVibe;
+        const workspace = document.getElementById('workspace');
+        const logDisplay = document.getElementById('log-content');
+        
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            loadNotes();
+            updateStats();
+            initClock();
+            initDraggables();
+            initPaint();
+            logSystem("OMNI-BOARD v1.0 Initialized successfully.");
+        });
+
+        /* --- LOGGING SYSTEM --- */
+        function logSystem(message) {
+            const time = new Date().toLocaleTimeString('lt-LT', {hour12: false});
+            logDisplay.innerText = `[${time}] ${message}`;
+            logDisplay.style.opacity = 1;
+            setTimeout(() => { logDisplay.style.opacity = 0.7; }, 3000);
+        }
+
+        /* --- NOTE SYSTEM --- */
+        document.getElementById('btn-add-note').addEventListener('click', () => {
+            createNote();
+            logSystem("Sukurtas naujas užrašų lapas.");
+        });
+
+        function createNote(x = 100, y = 100, content = '', id = null) {
+            const noteId = id || 'note_' + Date.now();
+            const noteEl = document.createElement('div');
+            noteEl.classList.add('note');
+            noteEl.id = noteId;
+            noteEl.style.left = x + 'px';
+            noteEl.style.top = y + 'px';
+            noteEl.style.zIndex = ++state.zIndex;
+
+            noteEl.innerHTML = `
+                <div class="note-header">
+                    <div class="note-status"></div>
+                    <div class="note-controls">
+                        <i class="fa-solid fa-pen-to-square" title="Keisti spalvą" onclick="changeNoteColor('${noteId}')"></i>
+                        <i class="fa-solid fa-xmark" title="Ištrinti" onclick="deleteNote('${noteId}')"></i>
+                    </div>
+                </div>
+                <div class="note-body">
+                    <textarea class="note-textarea" placeholder="Rašykite čia..." oninput="saveNotes()">${content}</textarea>
+                </div>
+            `;
+
+            // Make draggable
+            makeDraggable(noteEl);
             
-            // Atsitiktinė spalva rezultatui
-            const colors = ['#F0FF42', '#5800FF', '#FF0075', '#00FFC6'];
-            result.style.color = colors[Math.floor(Math.random() * colors.length)];
+            // Bring to front on click
+            noteEl.addEventListener('mousedown', () => {
+                noteEl.style.zIndex = ++state.zIndex;
+            });
+
+            workspace.appendChild(noteEl);
+            saveNotes();
+            updateStats();
+            return noteEl;
+        }
+
+        function deleteNote(id) {
+            const el = document.getElementById(id);
+            if(el) {
+                el.style.transform = "scale(0.8)";
+                el.style.opacity = "0";
+                setTimeout(() => {
+                    el.remove();
+                    saveNotes();
+                    updateStats();
+                    logSystem(`Objektas ${id} pašalintas iš atminties.`);
+                }, 200);
+            }
+        }
+
+        function changeNoteColor(id) {
+            const el = document.getElementById(id);
+            const colors = ['#161b22', '#1f2937', '#374151', '#2e1065', '#4c0519'];
+            const randomC = colors[Math.floor(Math.random() * colors.length)];
+            el.style.backgroundColor = randomC;
+            logSystem(`Objekto ${id} stilius atnaujintas.`);
+        }
+
+        /* --- DRAG & DROP ENGINE --- */
+        function makeDraggable(el) {
+            let isDragging = false;
+            let offset = { x: 0, y: 0 };
+            const header = el.querySelector('.note-header') || el.querySelector('.widget-header');
+
+            header.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                el.classList.add('dragging');
+                offset.x = e.clientX - el.getBoundingClientRect().left;
+                offset.y = e.clientY - el.getBoundingClientRect().top;
+                el.style.zIndex = ++state.zIndex;
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                const newX = e.clientX - offset.x;
+                const newY = e.clientY - offset.y;
+                el.style.left = newX + 'px';
+                el.style.top = newY + 'px';
+            });
+
+            window.addEventListener('mouseup', () => {
+                if(isDragging) {
+                    isDragging = false;
+                    el.classList.remove('dragging');
+                    saveNotes(); // Save position after drag
+                }
+            });
+        }
+
+        function initDraggables() {
+            // Apply drag to existing widgets
+            document.querySelectorAll('.widget').forEach(w => makeDraggable(w));
+        }
+
+        /* --- PAINT SYSTEM --- */
+        const canvas = document.getElementById('paint-layer');
+        const ctx = canvas.getContext('2d');
+        
+        function initPaint() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            window.addEventListener('resize', () => {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            });
+
+            let painting = false;
+
+            canvas.addEventListener('mousedown', (e) => {
+                painting = true;
+                ctx.beginPath();
+                ctx.moveTo(e.clientX - 80, e.clientY); // adjust for sidebar
+            });
+
+            canvas.addEventListener('mousemove', (e) => {
+                if(!painting) return;
+                ctx.lineWidth = 3;
+                ctx.lineCap = 'round';
+                ctx.strokeStyle = state.paintColor;
+                ctx.lineTo(e.clientX - 80, e.clientY);
+                ctx.stroke();
+            });
+
+            canvas.addEventListener('mouseup', () => { painting = false; });
+        }
+
+        document.getElementById('btn-paint').addEventListener('click', (e) => {
+            state.isPainting = !state.isPainting;
+            const btn = e.currentTarget;
+            const layer = document.getElementById('paint-layer');
+            
+            if(state.isPainting) {
+                btn.classList.add('active');
+                layer.classList.add('active');
+                logSystem("Piešimo režimas: ĮJUNGTAS.");
+            } else {
+                btn.classList.remove('active');
+                layer.classList.remove('active');
+                logSystem("Piešimo režimas: IŠJUNGTAS.");
+            }
         });
 
-        // Paprastas pelės judesio efektas hero antraštei
-        document.addEventListener('mousemove', (e) => {
-            const h1 = document.querySelector('.hero h1');
-            const moveX = (e.clientX - window.innerWidth / 2) / 50;
-            const moveY = (e.clientY - window.innerHeight / 2) / 50;
-            h1.style.transform = `translate(${moveX}px, ${moveY}px)`;
+        /* --- WIDGET LOGIC --- */
+        function toggleWidget(id) {
+            const w = document.getElementById(id);
+            if(w.classList.contains('visible')) {
+                w.classList.remove('visible');
+                logSystem(`Modulis ${id} uždarytas.`);
+            } else {
+                w.classList.add('visible');
+                w.style.zIndex = ++state.zIndex;
+                logSystem(`Modulis ${id} paleistas.`);
+            }
+        }
+
+        // Widget Buttons
+        document.getElementById('btn-calc').addEventListener('click', () => toggleWidget('widget-calc'));
+        document.getElementById('btn-music').addEventListener('click', () => toggleWidget('widget-music'));
+        document.getElementById('btn-game').addEventListener('click', () => toggleWidget('widget-game'));
+
+        // Calculator Logic
+        let calcVal = '0';
+        function calcInput(v) {
+            if(calcVal === '0') calcVal = v; else calcVal += v;
+            document.getElementById('calc-display').value = calcVal;
+        }
+        function calcOp(op) { calcVal += op; document.getElementById('calc-display').value = calcVal; }
+        function calcClear() { calcVal = '0'; document.getElementById('calc-display').value = calcVal; }
+        function calcResult() {
+            try { calcVal = eval(calcVal).toString(); } catch(e) { calcVal = 'Error'; }
+            document.getElementById('calc-display').value = calcVal;
+        }
+
+        // Game Logic
+        function updateGame() {
+            state.gameScore++;
+            document.getElementById('game-score').innerText = state.gameScore;
+            // Visual feedback
+            const btn = document.querySelector('#widget-game .tool-btn');
+            btn.style.transform = 'scale(0.95)';
+            setTimeout(() => btn.style.transform = 'scale(1)', 50);
+        }
+
+        /* --- UTILITIES --- */
+        document.getElementById('btn-clear').addEventListener('click', () => {
+            if(confirm("Ar tikrai norite išvalyti visą darbastalį?")) {
+                document.querySelectorAll('.note').forEach(n => n.remove());
+                ctx.clearRect(0,0,canvas.width, canvas.height);
+                localStorage.removeItem('omniNotes');
+                updateStats();
+                logSystem("Sistema formatuota. Darbastalis tuščias.");
+            }
         });
+
+        function updateStats() {
+            const count = document.querySelectorAll('.note').length;
+            document.getElementById('stat-count').innerText = count;
+        }
+
+        function initClock() {
+            setInterval(() => {
+                const now = new Date();
+                document.getElementById('stat-time').innerText = now.toLocaleTimeString('lt-LT', {hour: '2-digit', minute:'2-digit'});
+            }, 1000);
+        }
+
+        /* --- LOCAL STORAGE SAVING --- */
+        function saveNotes() {
+            const notes = [];
+            document.querySelectorAll('.note').forEach(el => {
+                notes.push({
+                    id: el.id,
+                    x: parseInt(el.style.left),
+                    y: parseInt(el.style.top),
+                    content: el.querySelector('textarea').value,
+                    bg: el.style.backgroundColor
+                });
+            });
+            localStorage.setItem('omniNotes', JSON.stringify(notes));
+        }
+
+        function loadNotes() {
+            const data = JSON.parse(localStorage.getItem('omniNotes'));
+            if(data) {
+                data.forEach(n => {
+                    const el = createNote(n.x, n.y, n.content, n.id);
+                    if(n.bg) el.style.backgroundColor = n.bg;
+                });
+            }
+        }
+
     </script>
 </body>
 </html>
