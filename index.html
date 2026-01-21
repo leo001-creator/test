@@ -3,303 +3,397 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistemos Valdymo Pultas v1.0</title>
+    <title>NEXUS CYBER-OS v2.0</title>
     <style>
         :root {
-            --primary: #00ff41; /* Hacker Green */
-            --secondary: #bd00ff; /* Cyber Purple */
-            --bg: #0d0d0d;
-            --panel: #1a1a1a;
-            --text: #e0e0e0;
+            --neon-blue: #00d4ff;
+            --neon-pink: #ff0055;
+            --neon-green: #39ff14;
+            --glass-bg: rgba(20, 20, 25, 0.8);
+            --border-glow: 0 0 10px rgba(0, 212, 255, 0.5);
         }
 
-        body {
-            font-family: 'Courier New', Courier, monospace;
-            background-color: var(--bg);
-            color: var(--text);
+        body, html {
             margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background: #050505;
+            color: white;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* Matrix Canvas Background */
+        #matrix-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.3;
+        }
+
+        /* Scanline Effect */
+        body::after {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 4px, 3px 100%;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            height: 40px;
+            background: rgba(0, 0, 0, 0.9);
+            border-bottom: 1px solid var(--neon-blue);
             display: flex;
-            justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            overflow-x: hidden;
-            transition: background-color 0.5s ease, transform 0.5s ease;
+            padding: 0 20px;
+            justify-content: space-between;
+            font-family: 'Courier New', monospace;
+            box-shadow: var(--border-glow);
         }
 
-        .container {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 20px;
-            width: 90%;
-            max-width: 1200px;
-            height: 80vh;
-        }
-
-        /* Mygtukų zona */
-        .control-panel {
-            background: var(--panel);
-            border: 2px solid var(--primary);
+        /* Main Workspace */
+        .desktop {
+            position: relative;
+            width: 100vw;
+            height: calc(100vh - 40px);
             padding: 20px;
+            box-sizing: border-box;
+        }
+
+        /* Window Style */
+        .window {
+            position: absolute;
+            background: var(--glass-bg);
+            border: 1px solid var(--neon-blue);
             border-radius: 8px;
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 15px;
-            box-shadow: 0 0 15px rgba(0, 255, 65, 0.2);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            min-width: 300px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            resize: both;
+        }
+
+        .window-header {
+            background: rgba(0, 212, 255, 0.2);
+            padding: 10px;
+            cursor: move;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 1px;
+        }
+
+        .window-content {
+            padding: 15px;
+            flex-grow: 1;
             overflow-y: auto;
         }
 
-        /* Logų zona */
-        .system-log {
-            background: #000;
-            border: 1px solid var(--text);
-            padding: 15px;
-            font-size: 14px;
-            overflow-y: scroll;
-            display: flex;
-            flex-direction: column-reverse; /* Naujausi apačioje, bet scrollas prikibęs */
-            border-radius: 8px;
-        }
-
-        .log-entry {
-            margin-bottom: 5px;
-            border-bottom: 1px solid #333;
-            padding-bottom: 2px;
-        }
-
-        .log-time {
-            color: var(--primary);
-            font-weight: bold;
-            margin-right: 10px;
-        }
-
-        /* Mygtukų stilius */
-        button {
+        /* Functional UI Elements */
+        .btn {
             background: transparent;
-            border: 1px solid var(--primary);
-            color: var(--primary);
-            padding: 15px;
-            font-family: inherit;
-            font-weight: bold;
+            border: 1px solid var(--neon-blue);
+            color: var(--neon-blue);
+            padding: 10px 15px;
+            margin: 5px;
             cursor: pointer;
-            transition: all 0.2s;
             text-transform: uppercase;
+            font-size: 11px;
+            transition: 0.3s;
             position: relative;
             overflow: hidden;
         }
 
-        button:hover {
-            background: var(--primary);
-            color: #000;
-            box-shadow: 0 0 10px var(--primary);
+        .btn:hover {
+            background: var(--neon-blue);
+            color: black;
+            box-shadow: 0 0 15px var(--neon-blue);
         }
 
-        button:active {
-            transform: scale(0.95);
+        .btn-pink { border-color: var(--neon-pink); color: var(--neon-pink); }
+        .btn-pink:hover { background: var(--neon-pink); box-shadow: 0 0 15px var(--neon-pink); }
+
+        /* Progress Bars */
+        .stat-row { margin-bottom: 15px; }
+        .progress-container {
+            width: 100%;
+            height: 10px;
+            background: #222;
+            border-radius: 5px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: var(--neon-blue);
+            transition: width 0.5s ease;
         }
 
-        /* Specialūs mygtukai */
-        .btn-danger {
-            border-color: red;
-            color: red;
-        }
-        .btn-danger:hover {
-            background: red;
-            box-shadow: 0 0 10px red;
-        }
-
-        .btn-magic {
-            border-color: var(--secondary);
-            color: var(--secondary);
-        }
-        .btn-magic:hover {
-            background: var(--secondary);
-            box-shadow: 0 0 10px var(--secondary);
+        /* System Terminal Log */
+        #terminal {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: var(--neon-green);
+            background: rgba(0,0,0,0.5);
+            padding: 10px;
+            height: 150px;
+            overflow-y: auto;
+            border: 1px solid #333;
         }
 
-        /* Efektų klasės JS valdymui */
-        .spin-mode {
-            animation: spin 2s infinite linear;
+        /* Glitch Effect */
+        .glitch {
+            animation: glitch 0.2s infinite;
+        }
+        @keyframes glitch {
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+            100% { transform: translate(0); }
         }
 
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                grid-template-columns: 1fr;
-                height: auto;
-            }
-            .system-log {
-                height: 200px;
-            }
+        /* Responsive Mobile Warning */
+        @media (max-width: 600px) {
+            .window { width: 90% !important; left: 5% !important; top: 10% !important; }
         }
     </style>
 </head>
 <body>
 
-<div class="container" id="main-container">
-    <div class="control-panel" id="controls">
-        <button onclick="changeColor()">RGB Disko</button>
-        <button onclick="generatePassword()">Gen. Slaptažodį</button>
-        <button onclick="simulateLoading()" class="btn-magic">Siųsti Duomenis</button>
-        <button onclick="gravityToggle()">Antigravitacija</button>
-        <button onclick="addMoreButtons()">Daugintis</button>
-        <button onclick="spamLog()">Flood Log</button>
-        <button onclick="teleportButton(this)" id="teleporter">Pagauk mane</button>
-        <button onclick="counterFunc()" id="counter-btn">Skaitiklis: 0</button>
-        <button onclick="matrixEffect()">The Matrix</button>
-        <button onclick="destroyPage()" class="btn-danger">Sunaikinti UI</button>
-        <button onclick="resetSystem()">Perkrauti Sistemą</button>
+<canvas id="matrix-bg"></canvas>
+
+<div class="top-bar">
+    <div>NEXUS_OS // KERNEL v4.1.2</div>
+    <div id="clock">00:00:00</div>
+    <div>USER: ADMIN // STATUS: <span style="color:var(--neon-green)">ONLINE</span></div>
+</div>
+
+<div class="desktop" id="desktop">
+
+    <div class="window" style="top: 50px; left: 50px; width: 400px;" id="win1">
+        <div class="window-header" onmousedown="dragElement(this.parentElement)">
+            <span>Sistemos Diagnostika</span>
+            <button class="btn" style="padding:2px 5px" onclick="this.parentElement.parentElement.style.display='none'">X</button>
+        </div>
+        <div class="window-content">
+            <div class="stat-row">
+                CPU NAUDOJIMAS: <span id="cpu-val">0%</span>
+                <div class="progress-container"><div class="progress-bar" id="cpu-bar"></div></div>
+            </div>
+            <div class="stat-row">
+                NEURONINIS RYŠYS: <span id="link-val">0%</span>
+                <div class="progress-container"><div class="progress-bar" id="link-bar" style="background:var(--neon-pink)"></div></div>
+            </div>
+            <div class="stat-row">
+                ATMINTIS: <span id="mem-val">0%</span>
+                <div class="progress-container"><div class="progress-bar" id="mem-bar" style="background:var(--neon-green)"></div></div>
+            </div>
+            <button class="btn" onclick="optimizeSystem()">Optimizuoti</button>
+            <button class="btn btn-pink" onclick="triggerOverload()">Perkrauti branduolį</button>
+        </div>
     </div>
 
-    <div class="system-log" id="console-output">
-        <div class="log-entry"><span class="log-time">[SYSTEM]</span> Pasiruošęs darbui...</div>
+    <div class="window" style="top: 100px; left: 500px; width: 350px;" id="win2">
+        <div class="window-header" onmousedown="dragElement(this.parentElement)">
+            <span>Valdymo Modulis</span>
+        </div>
+        <div class="window-content">
+            <button class="btn" onclick="spawnWindow()">Sukurti naują sesiją</button>
+            <button class="btn" onclick="toggleMatrix()">Matricos jungiklis</button>
+            <button class="btn" onclick="screenGlitch()">Vizualinis Glitch</button>
+            <button class="btn btn-pink" onclick="selfDestruct()">Savilikvidacija</button>
+            <hr style="border:0; border-top:1px solid #333">
+            <div id="terminal">System boot successful...<br>Awaiting commands...</div>
+        </div>
     </div>
+
 </div>
 
 <script>
-    // --- Pagalbinės funkcijos ---
-    const logOutput = document.getElementById('console-output');
-    
-    function log(message, type = 'INFO') {
+    // 1. Matrix Background Effect
+    const canvas = document.getElementById('matrix-bg');
+    const ctx = canvas.getContext('2d');
+    let matrixActive = true;
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const katakana = 'アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズヅブプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン';
+    const latin = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const nums = '0123456789';
+    const alphabet = katakana + latin + nums;
+    const fontSize = 16;
+    const columns = canvas.width / fontSize;
+    const rainDrops = Array.from({ length: columns }).fill(1);
+
+    function drawMatrix() {
+        if (!matrixActive) return;
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#0f0';
+        ctx.font = fontSize + 'px monospace';
+
+        for (let i = 0; i < rainDrops.length; i++) {
+            const text = alphabet.charAt(Math.floor(Math.random() * alphabet.length));
+            ctx.fillText(text, i * fontSize, rainDrops[i] * fontSize);
+            if (rainDrops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                rainDrops[i] = 0;
+            }
+            rainDrops[i]++;
+        }
+    }
+    setInterval(drawMatrix, 30);
+
+    // 2. Real-time Clock
+    function updateClock() {
         const now = new Date();
-        const timeString = `${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}`;
-        const entry = document.createElement('div');
-        entry.className = 'log-entry';
-        entry.innerHTML = `<span class="log-time">[${timeString} ${type}]</span> ${message}`;
-        logOutput.prepend(entry); // Dedame į viršų
+        document.getElementById('clock').innerText = now.getHours().toString().padStart(2, '0') + ":" + 
+            now.getMinutes().toString().padStart(2, '0') + ":" + 
+            now.getSeconds().toString().padStart(2, '0');
+    }
+    setInterval(updateClock, 1000);
+
+    // 3. System Bars Simulation
+    function updateStats() {
+        const cpu = Math.floor(Math.random() * 100);
+        const link = Math.floor(Math.random() * 100);
+        const mem = Math.floor(Math.random() * 100);
+
+        document.getElementById('cpu-bar').style.width = cpu + '%';
+        document.getElementById('cpu-val').innerText = cpu + '%';
+        document.getElementById('link-bar').style.width = link + '%';
+        document.getElementById('link-val').innerText = link + '%';
+        document.getElementById('mem-bar').style.width = mem + '%';
+        document.getElementById('mem-val').innerText = mem + '%';
+
+        if(cpu > 80) terminalLog("Įspėjimas: Didelė CPU apkrova!", "critical");
+    }
+    setInterval(updateStats, 3000);
+
+    // 4. Terminal Log
+    function terminalLog(msg, type = "info") {
+        const term = document.getElementById('terminal');
+        const color = type === "critical" ? "var(--neon-pink)" : "var(--neon-green)";
+        term.innerHTML += `<div style="color:${color}">> [${type.toUpperCase()}] ${msg}</div>`;
+        term.scrollTop = term.scrollHeight;
     }
 
-    function randomColor() {
-        return '#' + Math.floor(Math.random()*16777215).toString(16);
+    // 5. Functions
+    function toggleMatrix() {
+        matrixActive = !matrixActive;
+        terminalLog(matrixActive ? "Matrica aktyvuota" : "Matrica sustabdyta");
+        if(!matrixActive) ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
 
-    // --- Mygtukų Funkcijos ---
-
-    // 1. Pakeisti fono spalvą
-    function changeColor() {
-        document.body.style.backgroundColor = randomColor();
-        log('Fono spalva pakeista į atsitiktinę reikšmę.', 'STYLE');
+    function screenGlitch() {
+        document.body.classList.add('glitch');
+        terminalLog("Vizualinis trikdis aptiktas", "warning");
+        setTimeout(() => document.body.classList.remove('glitch'), 500);
     }
 
-    // 2. Generuoti "saugų" slaptažodį
-    function generatePassword() {
-        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
-        let password = "";
-        for (let i = 0; i < 12; i++) {
-            password += chars.charAt(Math.floor(Math.random() * chars.length));
-        }
-        alert(`Tavo naujas slaptažodis: ${password}`);
-        log(`Sugeneruotas hash: ${password.substring(0, 5)}***`, 'SECURE');
+    function optimizeSystem() {
+        terminalLog("Valomi laikinieji failai...", "info");
+        terminalLog("Sistemos našumas padidėjo 15%", "info");
     }
 
-    // 3. Imituoti asinchroninį procesą (Loading)
-    function simulateLoading() {
-        log('Pradėtas duomenų siuntimas į serverį...', 'NETWORK');
-        const btn = document.activeElement;
-        const originalText = btn.innerText;
-        btn.innerText = "Siunčiama...";
-        btn.disabled = true;
-
-        setTimeout(() => {
-            btn.innerText = originalText;
-            btn.disabled = false;
-            log('Duomenys sėkmingai išsiųsti. Atsakas: 200 OK', 'SUCCESS');
-        }, 2000);
+    function triggerOverload() {
+        terminalLog("KRITINĖ KLAIDA: Branduolio perkrova!", "critical");
+        document.body.style.filter = "invert(1) hue-rotate(90deg)";
+        setTimeout(() => document.body.style.filter = "none", 200);
     }
 
-    // 4. Sukti ekraną
-    let isSpinning = false;
-    function gravityToggle() {
-        const container = document.getElementById('main-container');
-        if (!isSpinning) {
-            container.classList.add('spin-mode');
-            log('Gravitacijos sistemos sutrikimas!', 'WARNING');
-            isSpinning = true;
-        } else {
-            container.classList.remove('spin-mode');
-            log('Gravitacija stabilizuota.', 'PHYSICS');
-            isSpinning = false;
-        }
-    }
-
-    // 5. Pridėti dinamiškai mygtukus
-    function addMoreButtons() {
-        const panel = document.getElementById('controls');
-        const newBtn = document.createElement('button');
-        newBtn.innerText = `Klonas #${Math.floor(Math.random() * 1000)}`;
-        newBtn.onclick = function() {
-            this.remove();
-            log('Klonas sunaikintas.', 'DELETED');
-        };
-        panel.appendChild(newBtn);
-        log('Sukurtas naujas DOM elementas.', 'DOM');
-    }
-
-    // 6. Užpildyti logą
-    function spamLog() {
-        for(let i=0; i<10; i++) {
-            setTimeout(() => {
-                log(`Sistemos klaida #${Math.floor(Math.random() * 9999)}`, 'ERROR');
-            }, i * 100);
-        }
-    }
-
-    // 7. Judantis mygtukas
-    function teleportButton(btn) {
-        const panel = document.getElementById('controls');
-        // Tikrinam ar mygtukas vis dar paneleje
-        if(panel.contains(btn)){
-            // Tiesiog sukeičiam vietom su kitu vaiku arba įdedam į random vietą
-            // Paprasčiau: keičiam random spalvą ir tekstą
-            btn.style.borderColor = randomColor();
-            btn.innerText = "Nepagavai!";
-            setTimeout(() => btn.innerText = "Pagauk mane", 500);
-            log('Objektas teleportavosi.', 'QUANTUM');
-        }
-    }
-
-    // 8. Skaitiklis
-    let count = 0;
-    function counterFunc() {
-        count++;
-        document.getElementById('counter-btn').innerText = `Skaitiklis: ${count}`;
-        log(`Reikšmė padidinta: ${count}`, 'MATH');
-    }
-
-    // 9. Matrix efektas (teksto keitimas)
-    function matrixEffect() {
-        const allButtons = document.querySelectorAll('button');
-        allButtons.forEach(btn => {
-            const oldText = btn.innerText;
-            btn.innerText = Math.random() > 0.5 ? '010101' : '101010';
-            btn.style.color = '#00ff41';
-            btn.style.borderColor = '#00ff41';
-            setTimeout(() => {
-                btn.innerText = oldText;
-                btn.style.color = ''; // Reset
-                btn.style.borderColor = '';
+    function selfDestruct() {
+        if(confirm("AR TIKRAI PRADĖTI SAVILIKVIDACIJOS PROCESĄ?")) {
+            let count = 5;
+            terminalLog("SAVILIKVIDACIJA PRADĖTA", "critical");
+            const interval = setInterval(() => {
+                terminalLog("T-minus " + count);
+                count--;
+                if(count < 0) {
+                    clearInterval(interval);
+                    document.body.innerHTML = "<h1 style='color:red; text-align:center; margin-top:20%'>SISTEMA SUNAIKINTA</h1>";
+                }
             }, 1000);
-        });
-        log('Įsilaužta į matricą...', 'HACK');
-    }
-
-    // 10. UI Sunaikinimas
-    function destroyPage() {
-        if(confirm("Ar tikrai norite ištrinti vartotojo sąsają?")) {
-            document.getElementById('controls').style.display = 'none';
-            log('Vartotojo sąsaja pašalinta. Prašome perkrauti.', 'CRITICAL');
-            document.body.style.backgroundColor = 'black';
         }
     }
 
-    // 11. Reset
-    function resetSystem() {
-        location.reload();
+    function spawnWindow() {
+        const id = "win" + Math.random().toString(36).substr(2, 5);
+        const win = document.createElement('div');
+        win.className = "window";
+        win.style.top = "200px";
+        win.style.left = "300px";
+        win.id = id;
+        win.innerHTML = `
+            <div class="window-header" onmousedown="dragElement(this.parentElement)">
+                <span>NAUJA SESIJA</span>
+                <button class="btn" style="padding:2px 5px" onclick="this.parentElement.parentElement.remove()">X</button>
+            </div>
+            <div class="window-content">
+                <p>Objektas: ${id}</p>
+                <button class="btn" onclick="alert('Bip-Bop!')">Testuoti</button>
+            </div>
+        `;
+        document.getElementById('desktop').appendChild(win);
+        terminalLog("Sukurta nauja sesija: " + id);
     }
-</script>
 
+    // 6. Draggable Logic
+    function dragElement(elmnt) {
+        let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+        elmnt.onmousedown = dragMouseDown;
+
+        function dragMouseDown(e) {
+            e = e || window.event;
+            // if we are clicking button inside header, don't drag
+            if(e.target.tagName === "BUTTON") return;
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+            document.onmouseup = closeDragElement;
+            document.onmousemove = elementDrag;
+            // Bring to front
+            document.querySelectorAll('.window').forEach(w => w.style.zIndex = 1);
+            elmnt.style.zIndex = 100;
+        }
+
+        function elementDrag(e) {
+            e = e || window.event;
+            pos1 = pos3 - e.clientX;
+            pos2 = pos4 - e.clientY;
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+            elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+            elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+        }
+
+        function closeDragElement() {
+            document.onmouseup = null;
+            document.onmousemove = null;
+        }
+    }
+
+    // Init first windows
+    dragElement(document.getElementById('win1'));
+    dragElement(document.getElementById('win2'));
+
+</script>
 </body>
 </html>
