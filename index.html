@@ -3,516 +3,303 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZENITH OS // Web Environment</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <title>Sistemos Valdymo Pultas v1.0</title>
     <style>
-        /* --- KERNEL STYLES (BOOT) --- */
         :root {
-            --bg-image: url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=2072');
-            --glass: rgba(20, 20, 30, 0.6);
-            --glass-border: rgba(255, 255, 255, 0.1);
-            --accent: #00f2ff;
-            --text: #ffffff;
-            --taskbar-h: 50px;
+            --primary: #00ff41; /* Hacker Green */
+            --secondary: #bd00ff; /* Cyber Purple */
+            --bg: #0d0d0d;
+            --panel: #1a1a1a;
+            --text: #e0e0e0;
         }
 
-        * { box-sizing: border-box; user-select: none; cursor: default; }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: 'Segoe UI', sans-serif; background: #000; color: white; }
-
-        /* BOOT SCREEN */
-        #boot-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; z-index: 9999; padding: 40px; font-family: 'Courier New', monospace;
-            display: flex; flex-direction: column; justify-content: flex-start;
-        }
-        .boot-line { color: #0f0; margin-bottom: 5px; font-size: 14px; opacity: 0; animation: fadeIn 0.1s forwards; }
-
-        /* LOGIN SCREEN */
-        #login-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--bg-image); background-size: cover;
-            display: none; align-items: center; justify-content: center; z-index: 9000;
-            backdrop-filter: blur(10px);
-        }
-        .login-box {
-            background: rgba(0,0,0,0.5); padding: 40px; border-radius: 20px;
-            text-align: center; border: 1px solid rgba(255,255,255,0.2);
-            backdrop-filter: blur(20px); box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-            animation: slideUp 0.5s ease;
-        }
-        .user-avatar {
-            width: 100px; height: 100px; background: url('https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200');
-            background-size: cover; border-radius: 50%; margin: 0 auto 20px; border: 2px solid var(--accent);
-        }
-        .login-input {
-            background: rgba(255,255,255,0.1); border: none; padding: 10px 20px;
-            color: white; border-radius: 30px; margin-top: 15px; width: 200px; text-align: center;
-            outline: none; transition: 0.3s;
-        }
-        .login-input:focus { background: rgba(255,255,255,0.2); width: 220px; }
-        .login-btn { margin-top: 15px; cursor: pointer; color: var(--accent); font-size: 24px; transition: 0.3s; }
-        .login-btn:hover { transform: scale(1.2); text-shadow: 0 0 10px var(--accent); }
-
-        /* DESKTOP */
-        #desktop {
-            width: 100%; height: 100%; background: var(--bg-image) no-repeat center center/cover;
-            position: relative; overflow: hidden; display: none;
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+            transition: background-color 0.5s ease, transform 0.5s ease;
         }
 
-        /* DESKTOP ICONS */
-        .icon-grid {
-            padding: 20px; display: flex; flex-direction: column; flex-wrap: wrap; height: 90vh;
-            gap: 15px; align-content: flex-start;
+        .container {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            width: 90%;
+            max-width: 1200px;
+            height: 80vh;
         }
-        .app-icon {
-            width: 80px; text-align: center; padding: 10px; border-radius: 8px;
-            transition: 0.2s; cursor: pointer; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+
+        /* Mygtukų zona */
+        .control-panel {
+            background: var(--panel);
+            border: 2px solid var(--primary);
+            padding: 20px;
+            border-radius: 8px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            box-shadow: 0 0 15px rgba(0, 255, 65, 0.2);
+            overflow-y: auto;
         }
-        .app-icon:hover { background: rgba(255,255,255,0.15); }
-        .app-icon i { font-size: 32px; margin-bottom: 8px; filter: drop-shadow(0 0 5px rgba(0,0,0,0.5)); }
-        .app-icon[data-color="blue"] i { color: #4facfe; }
-        .app-icon[data-color="orange"] i { color: #ffa41b; }
-        .app-icon[data-color="green"] i { color: #00ba52; }
-        .app-icon[data-color="purple"] i { color: #c471ed; }
-        .app-icon span { font-size: 12px; display: block; }
 
-        /* WINDOWS */
-        .window {
-            position: absolute; width: 600px; height: 400px;
-            background: rgba(24, 24, 32, 0.85);
-            backdrop-filter: blur(15px);
-            border: 1px solid var(--glass-border);
-            border-radius: 10px;
-            box-shadow: 0 15px 40px rgba(0,0,0,0.6);
-            display: flex; flex-direction: column;
-            top: 100px; left: 100px;
-            animation: openWindow 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
-            min-width: 300px; min-height: 200px;
-            resize: both; overflow: hidden;
+        /* Logų zona */
+        .system-log {
+            background: #000;
+            border: 1px solid var(--text);
+            padding: 15px;
+            font-size: 14px;
+            overflow-y: scroll;
+            display: flex;
+            flex-direction: column-reverse; /* Naujausi apačioje, bet scrollas prikibęs */
+            border-radius: 8px;
         }
-        .window.active { border-color: rgba(255,255,255,0.3); z-index: 100; }
-        
-        .window-header {
-            height: 35px; background: rgba(255,255,255,0.05);
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 0 10px; cursor: grab; border-bottom: 1px solid rgba(255,255,255,0.05);
+
+        .log-entry {
+            margin-bottom: 5px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 2px;
         }
-        .window-header:active { cursor: grabbing; }
-        
-        .win-controls span {
-            display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-left: 6px; cursor: pointer;
+
+        .log-time {
+            color: var(--primary);
+            font-weight: bold;
+            margin-right: 10px;
         }
-        .win-close { background: #ff5f56; }
-        .win-min { background: #ffbd2e; }
-        .win-max { background: #27c93f; }
 
-        .window-content { flex: 1; padding: 0; overflow: auto; position: relative; }
-
-        /* APP SPECIFIC */
-        /* Terminal */
-        .terminal { background: #0c0c0c; color: #0f0; font-family: 'Consolas', monospace; padding: 10px; height: 100%; font-size: 14px; }
-        .term-input { background: transparent; border: none; color: #0f0; font-family: inherit; width: 100%; outline: none; }
-        
-        /* Settings */
-        .settings-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 20px; }
-        .bg-thumb { height: 80px; border-radius: 8px; cursor: pointer; border: 2px solid transparent; background-size: cover; }
-        .bg-thumb:hover { transform: scale(1.05); }
-
-        /* TASKBAR */
-        .taskbar {
-            position: absolute; bottom: 0; left: 0; width: 100%; height: var(--taskbar-h);
-            background: rgba(10, 10, 15, 0.8); backdrop-filter: blur(20px);
-            display: flex; align-items: center; padding: 0 15px; border-top: 1px solid rgba(255,255,255,0.1);
-            z-index: 9000; justify-content: space-between;
+        /* Mygtukų stilius */
+        button {
+            background: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            padding: 15px;
+            font-family: inherit;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            position: relative;
+            overflow: hidden;
         }
-        
-        #start-btn {
-            font-size: 24px; color: var(--accent); margin-right: 20px; cursor: pointer; transition: 0.3s;
+
+        button:hover {
+            background: var(--primary);
+            color: #000;
+            box-shadow: 0 0 10px var(--primary);
         }
-        #start-btn:hover { text-shadow: 0 0 15px var(--accent); transform: rotate(90deg); }
 
-        .taskbar-apps { flex: 1; display: flex; gap: 5px; }
-        .task-tab {
-            padding: 5px 15px; background: rgba(255,255,255,0.05); border-radius: 4px;
-            cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 12px;
-            transition: 0.2s; border-bottom: 2px solid transparent;
+        button:active {
+            transform: scale(0.95);
         }
-        .task-tab:hover { background: rgba(255,255,255,0.1); }
-        .task-tab.active { border-bottom: 2px solid var(--accent); background: rgba(0, 242, 255, 0.1); }
 
-        .system-tray { display: flex; gap: 15px; align-items: center; font-size: 12px; font-weight: 600; }
-
-        /* START MENU */
-        #start-menu {
-            position: absolute; bottom: 60px; left: 10px; width: 350px; height: 450px;
-            background: rgba(20, 20, 30, 0.95); backdrop-filter: blur(25px);
-            border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);
-            transform: translateY(100%); opacity: 0; pointer-events: none; transition: 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
-            z-index: 8999; padding: 20px; display: flex; flex-direction: column;
+        /* Specialūs mygtukai */
+        .btn-danger {
+            border-color: red;
+            color: red;
         }
-        #start-menu.open { transform: translateY(0); opacity: 1; pointer-events: auto; }
-        .start-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 20px; }
-        .start-item { display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; padding: 10px; border-radius: 8px; }
-        .start-item:hover { background: rgba(255,255,255,0.1); }
-
-        /* CONTEXT MENU */
-        #context-menu {
-            position: absolute; background: #222; border: 1px solid #444; width: 150px;
-            border-radius: 5px; padding: 5px 0; display: none; z-index: 10000;
+        .btn-danger:hover {
+            background: red;
+            box-shadow: 0 0 10px red;
         }
-        .ctx-item { padding: 8px 15px; cursor: pointer; font-size: 12px; }
-        .ctx-item:hover { background: var(--accent); color: black; }
 
-        @keyframes fadeIn { to { opacity: 1; } }
-        @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        @keyframes openWindow { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .btn-magic {
+            border-color: var(--secondary);
+            color: var(--secondary);
+        }
+        .btn-magic:hover {
+            background: var(--secondary);
+            box-shadow: 0 0 10px var(--secondary);
+        }
 
+        /* Efektų klasės JS valdymui */
+        .spin-mode {
+            animation: spin 2s infinite linear;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+            .system-log {
+                height: 200px;
+            }
+        }
     </style>
 </head>
 <body>
 
-    <div id="boot-screen"></div>
-
-    <div id="login-screen">
-        <div class="login-box">
-            <div class="user-avatar"></div>
-            <h3>Administrator</h3>
-            <p style="color: #aaa; font-size: 12px; margin-bottom: 10px;">Įveskite slaptažodį (bet ką)</p>
-            <input type="password" class="login-input" placeholder="••••••">
-            <div class="login-btn" onclick="startDesktop()"><i class="fa-solid fa-arrow-right"></i></div>
-        </div>
+<div class="container" id="main-container">
+    <div class="control-panel" id="controls">
+        <button onclick="changeColor()">RGB Disko</button>
+        <button onclick="generatePassword()">Gen. Slaptažodį</button>
+        <button onclick="simulateLoading()" class="btn-magic">Siųsti Duomenis</button>
+        <button onclick="gravityToggle()">Antigravitacija</button>
+        <button onclick="addMoreButtons()">Daugintis</button>
+        <button onclick="spamLog()">Flood Log</button>
+        <button onclick="teleportButton(this)" id="teleporter">Pagauk mane</button>
+        <button onclick="counterFunc()" id="counter-btn">Skaitiklis: 0</button>
+        <button onclick="matrixEffect()">The Matrix</button>
+        <button onclick="destroyPage()" class="btn-danger">Sunaikinti UI</button>
+        <button onclick="resetSystem()">Perkrauti Sistemą</button>
     </div>
 
-    <div id="desktop">
-        
-        <div class="icon-grid">
-            <div class="app-icon" onclick="openApp('pc')" data-color="blue">
-                <i class="fa-solid fa-computer"></i><span>Šis PC</span>
-            </div>
-            <div class="app-icon" onclick="openApp('terminal')" data-color="green">
-                <i class="fa-solid fa-terminal"></i><span>Terminalas</span>
-            </div>
-            <div class="app-icon" onclick="openApp('settings')" data-color="purple">
-                <i class="fa-solid fa-gear"></i><span>Nustatymai</span>
-            </div>
-            <div class="app-icon" onclick="openApp('browser')" data-color="orange">
-                <i class="fa-brands fa-chrome"></i><span>Naršyklė</span>
-            </div>
-            <div class="app-icon" onclick="openApp('notepad')" data-color="blue">
-                <i class="fa-regular fa-file-lines"></i><span>Užrašai</span>
-            </div>
-        </div>
-
-        <div id="start-menu">
-            <h3 style="margin-bottom: 10px; border-bottom: 1px solid #444; padding-bottom: 10px;">ZENITH OS</h3>
-            <input type="text" placeholder="Ieškoti..." style="width: 100%; padding: 8px; background: #333; border: none; color: white; border-radius: 4px;">
-            <div class="start-grid">
-                <div class="start-item" onclick="openApp('terminal')"><i class="fa-solid fa-terminal"></i>CMD</div>
-                <div class="start-item" onclick="openApp('settings')"><i class="fa-solid fa-gear"></i>Setup</div>
-                <div class="start-item" onclick="openApp('browser')"><i class="fa-solid fa-globe"></i>Web</div>
-                <div class="start-item" onclick="openApp('calc')"><i class="fa-solid fa-calculator"></i>Calc</div>
-                <div class="start-item" onclick="openApp('camera')"><i class="fa-solid fa-camera"></i>Cam</div>
-                <div class="start-item" onclick="logout()"><i class="fa-solid fa-power-off" style="color: #ff5f56;"></i>Išjungti</div>
-            </div>
-        </div>
-
-        <div class="taskbar">
-            <div style="display:flex; align-items:center;">
-                <div id="start-btn" onclick="toggleStartMenu()"><i class="fa-brands fa-windows"></i></div>
-                <div class="taskbar-apps" id="taskbar-apps">
-                    </div>
-            </div>
-            <div class="system-tray">
-                <i class="fa-solid fa-wifi"></i>
-                <i class="fa-solid fa-volume-high"></i>
-                <span id="clock">12:00</span>
-            </div>
-        </div>
-
-        <div id="context-menu">
-            <div class="ctx-item" onclick="openApp('notepad')">Naujas failas</div>
-            <div class="ctx-item" onclick="openApp('settings')">Personalizuoti</div>
-            <div class="ctx-item" onclick="location.reload()">Perkrauti</div>
-        </div>
-
+    <div class="system-log" id="console-output">
+        <div class="log-entry"><span class="log-time">[SYSTEM]</span> Pasiruošęs darbui...</div>
     </div>
+</div>
 
-    <script>
-        /* --- SYSTEM CORE --- */
-        const bootScreen = document.getElementById('boot-screen');
-        const loginScreen = document.getElementById('login-screen');
-        const desktop = document.getElementById('desktop');
-        const taskbarApps = document.getElementById('taskbar-apps');
-        let zIndexCounter = 100;
-        let bootLogs = [
-            "Initializing ZENITH KERNEL v4.0...",
-            "Loading memory modules... OK",
-            "Mounting virtual file system... OK",
-            "Checking CPU registers... OK",
-            "Loading graphics driver [Glass_Engine]... OK",
-            "Starting system services...",
-            "System READY."
-        ];
+<script>
+    // --- Pagalbinės funkcijos ---
+    const logOutput = document.getElementById('console-output');
+    
+    function log(message, type = 'INFO') {
+        const now = new Date();
+        const timeString = `${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}`;
+        const entry = document.createElement('div');
+        entry.className = 'log-entry';
+        entry.innerHTML = `<span class="log-time">[${timeString} ${type}]</span> ${message}`;
+        logOutput.prepend(entry); // Dedame į viršų
+    }
 
-        /* --- BOOT PROCESS --- */
-        window.onload = function() {
-            let delay = 0;
-            bootLogs.forEach((log, index) => {
-                setTimeout(() => {
-                    const p = document.createElement('div');
-                    p.className = 'boot-line';
-                    p.innerText = `> ${log}`;
-                    bootScreen.appendChild(p);
-                    if(index === bootLogs.length - 1) {
-                        setTimeout(() => {
-                            bootScreen.style.display = 'none';
-                            loginScreen.style.display = 'flex';
-                        }, 1000);
-                    }
-                }, delay);
-                delay += Math.random() * 500 + 200;
-            });
-            startClock();
+    function randomColor() {
+        return '#' + Math.floor(Math.random()*16777215).toString(16);
+    }
+
+    // --- Mygtukų Funkcijos ---
+
+    // 1. Pakeisti fono spalvą
+    function changeColor() {
+        document.body.style.backgroundColor = randomColor();
+        log('Fono spalva pakeista į atsitiktinę reikšmę.', 'STYLE');
+    }
+
+    // 2. Generuoti "saugų" slaptažodį
+    function generatePassword() {
+        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+        let password = "";
+        for (let i = 0; i < 12; i++) {
+            password += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        alert(`Tavo naujas slaptažodis: ${password}`);
+        log(`Sugeneruotas hash: ${password.substring(0, 5)}***`, 'SECURE');
+    }
+
+    // 3. Imituoti asinchroninį procesą (Loading)
+    function simulateLoading() {
+        log('Pradėtas duomenų siuntimas į serverį...', 'NETWORK');
+        const btn = document.activeElement;
+        const originalText = btn.innerText;
+        btn.innerText = "Siunčiama...";
+        btn.disabled = true;
+
+        setTimeout(() => {
+            btn.innerText = originalText;
+            btn.disabled = false;
+            log('Duomenys sėkmingai išsiųsti. Atsakas: 200 OK', 'SUCCESS');
+        }, 2000);
+    }
+
+    // 4. Sukti ekraną
+    let isSpinning = false;
+    function gravityToggle() {
+        const container = document.getElementById('main-container');
+        if (!isSpinning) {
+            container.classList.add('spin-mode');
+            log('Gravitacijos sistemos sutrikimas!', 'WARNING');
+            isSpinning = true;
+        } else {
+            container.classList.remove('spin-mode');
+            log('Gravitacija stabilizuota.', 'PHYSICS');
+            isSpinning = false;
+        }
+    }
+
+    // 5. Pridėti dinamiškai mygtukus
+    function addMoreButtons() {
+        const panel = document.getElementById('controls');
+        const newBtn = document.createElement('button');
+        newBtn.innerText = `Klonas #${Math.floor(Math.random() * 1000)}`;
+        newBtn.onclick = function() {
+            this.remove();
+            log('Klonas sunaikintas.', 'DELETED');
         };
+        panel.appendChild(newBtn);
+        log('Sukurtas naujas DOM elementas.', 'DOM');
+    }
 
-        function startDesktop() {
-            loginScreen.style.display = 'none';
-            desktop.style.display = 'block';
-            playSound('startup');
+    // 6. Užpildyti logą
+    function spamLog() {
+        for(let i=0; i<10; i++) {
+            setTimeout(() => {
+                log(`Sistemos klaida #${Math.floor(Math.random() * 9999)}`, 'ERROR');
+            }, i * 100);
         }
+    }
 
-        function logout() {
-            desktop.style.display = 'none';
-            loginScreen.style.display = 'flex';
+    // 7. Judantis mygtukas
+    function teleportButton(btn) {
+        const panel = document.getElementById('controls');
+        // Tikrinam ar mygtukas vis dar paneleje
+        if(panel.contains(btn)){
+            // Tiesiog sukeičiam vietom su kitu vaiku arba įdedam į random vietą
+            // Paprasčiau: keičiam random spalvą ir tekstą
+            btn.style.borderColor = randomColor();
+            btn.innerText = "Nepagavai!";
+            setTimeout(() => btn.innerText = "Pagauk mane", 500);
+            log('Objektas teleportavosi.', 'QUANTUM');
         }
+    }
 
-        /* --- WINDOW MANAGER --- */
-        function openApp(appId) {
-            document.getElementById('start-menu').classList.remove('open');
-            
-            const winId = 'win-' + Date.now();
-            const win = document.createElement('div');
-            win.className = 'window active';
-            win.id = winId;
-            win.style.zIndex = ++zIndexCounter;
-            
-            // Random Position
-            const left = 50 + Math.random() * 100;
-            const top = 50 + Math.random() * 50;
-            win.style.left = left + 'px';
-            win.style.top = top + 'px';
+    // 8. Skaitiklis
+    let count = 0;
+    function counterFunc() {
+        count++;
+        document.getElementById('counter-btn').innerText = `Skaitiklis: ${count}`;
+        log(`Reikšmė padidinta: ${count}`, 'MATH');
+    }
 
-            let title = "Programa";
-            let content = "";
-            let icon = "fa-window-maximize";
-
-            // APP CONTENT DEFINITIONS
-            switch(appId) {
-                case 'terminal':
-                    title = "Terminal - admin@zenith";
-                    icon = "fa-terminal";
-                    content = `<div class="terminal" id="term-${winId}">
-                        <div>ZenithOS [Version 1.0.5]<br>(c) Zenith Corp. All rights reserved.<br><br></div>
-                        <div id="term-out-${winId}"></div>
-                        <span>C:\\Users\\Admin></span> <input type="text" class="term-input" onkeydown="handleTerminal(this, event, '${winId}')" autofocus>
-                    </div>`;
-                    break;
-                case 'settings':
-                    title = "Nustatymai";
-                    icon = "fa-gear";
-                    content = `<div style="padding: 20px;">
-                        <h3>Fono paveikslėlis</h3>
-                        <div class="settings-grid">
-                            <div class="bg-thumb" style="background-image: url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=300')" onclick="changeBg(this)"></div>
-                            <div class="bg-thumb" style="background-image: url('https://images.unsplash.com/photo-1506318137071-a8bcbf6755dd?w=300')" onclick="changeBg(this)"></div>
-                            <div class="bg-thumb" style="background-image: url('https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?w=300')" onclick="changeBg(this)"></div>
-                        </div>
-                    </div>`;
-                    break;
-                case 'browser':
-                    title = "World Wide Web";
-                    icon = "fa-globe";
-                    content = `<div style="display:flex; flex-direction:column; height:100%;">
-                        <div style="padding:5px; background:#222; display:flex; gap:5px;">
-                            <input type="text" value="https://wikipedia.org" style="flex:1; background:#111; border:1px solid #444; color:white; padding:5px; border-radius:3px;">
-                            <button style="background:var(--accent); border:none; cursor:pointer;">GO</button>
-                        </div>
-                        <iframe src="https://en.m.wikipedia.org/wiki/Special:Random" style="flex:1; border:none; width:100%;"></iframe>
-                    </div>`;
-                    break;
-                case 'notepad':
-                    title = "Užrašinė";
-                    icon = "fa-file-lines";
-                    content = `<textarea style="width:100%; height:100%; background:transparent; color:white; border:none; padding:10px; resize:none; outline:none; font-family:'Segoe UI';">Čia galite rašyti...</textarea>`;
-                    break;
-                default:
-                    title = "Klaida";
-                    content = "<div style='padding:20px'>Programa nerasta.</div>";
-            }
-
-            win.innerHTML = `
-                <div class="window-header" onmousedown="startDrag(event, '${winId}')">
-                    <div style="display:flex; align-items:center; gap:10px; font-size:12px;">
-                        <i class="fa-solid ${icon}"></i> ${title}
-                    </div>
-                    <div class="win-controls">
-                        <span class="win-min" onclick="minimizeWindow('${winId}')"></span>
-                        <span class="win-max" onclick="maximizeWindow('${winId}')"></span>
-                        <span class="win-close" onclick="closeWindow('${winId}')"></span>
-                    </div>
-                </div>
-                <div class="window-content">${content}</div>
-            `;
-
-            win.addEventListener('mousedown', () => {
-                win.style.zIndex = ++zIndexCounter;
-                updateActiveTab(winId);
-            });
-
-            desktop.appendChild(win);
-            addTaskbarItem(winId, title, icon);
-        }
-
-        function closeWindow(id) {
-            document.getElementById(id).remove();
-            document.getElementById('tab-' + id).remove();
-        }
-
-        function maximizeWindow(id) {
-            const win = document.getElementById(id);
-            if(win.style.width === '100%') {
-                win.style.width = '600px'; win.style.height = '400px'; win.style.top = '100px'; win.style.left = '100px';
-            } else {
-                win.style.width = '100%'; win.style.height = 'calc(100% - 50px)'; win.style.top = '0'; win.style.left = '0';
-            }
-        }
-
-        function minimizeWindow(id) {
-            const win = document.getElementById(id);
-            win.style.display = 'none';
-            document.getElementById('tab-' + id).classList.remove('active');
-        }
-
-        /* --- TASKBAR LOGIC --- */
-        function addTaskbarItem(winId, title, icon) {
-            const tab = document.createElement('div');
-            tab.className = 'task-tab active';
-            tab.id = 'tab-' + winId;
-            tab.innerHTML = `<i class="fa-solid ${icon}"></i> ${title.substring(0, 15)}...`;
-            tab.onclick = () => {
-                const win = document.getElementById(winId);
-                if(win.style.display === 'none') {
-                    win.style.display = 'flex';
-                    win.style.zIndex = ++zIndexCounter;
-                } else if (win.style.zIndex < zIndexCounter) {
-                    win.style.zIndex = ++zIndexCounter;
-                } else {
-                    win.style.display = 'none';
-                    tab.classList.remove('active');
-                    return;
-                }
-                updateActiveTab(winId);
-            };
-            taskbarApps.appendChild(tab);
-        }
-
-        function updateActiveTab(activeId) {
-            document.querySelectorAll('.task-tab').forEach(t => t.classList.remove('active'));
-            const tab = document.getElementById('tab-' + activeId);
-            if(tab) tab.classList.add('active');
-        }
-
-        /* --- DRAGGING LOGIC --- */
-        let isDragging = false;
-        let dragOffset = {x:0, y:0};
-        let currentWin = null;
-
-        function startDrag(e, id) {
-            if(e.target.classList.contains('win-controls') || e.target.parentNode.classList.contains('win-controls')) return;
-            isDragging = true;
-            currentWin = document.getElementById(id);
-            dragOffset.x = e.clientX - currentWin.offsetLeft;
-            dragOffset.y = e.clientY - currentWin.offsetTop;
-            
-            // Prevent text selection
-            e.preventDefault();
-        }
-
-        document.addEventListener('mousemove', (e) => {
-            if(isDragging && currentWin) {
-                currentWin.style.left = (e.clientX - dragOffset.x) + 'px';
-                currentWin.style.top = (e.clientY - dragOffset.y) + 'px';
-            }
-        });
-
-        document.addEventListener('mouseup', () => {
-            isDragging = false;
-            currentWin = null;
-        });
-
-        /* --- UTILS --- */
-        function toggleStartMenu() {
-            document.getElementById('start-menu').classList.toggle('open');
-        }
-        
-        // Close start menu when clicking on desktop
-        desktop.addEventListener('click', (e) => {
-            if(e.target === desktop) document.getElementById('start-menu').classList.remove('open');
-        });
-
-        // Context Menu
-        desktop.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-            const menu = document.getElementById('context-menu');
-            menu.style.display = 'block';
-            menu.style.left = e.clientX + 'px';
-            menu.style.top = e.clientY + 'px';
-        });
-        document.addEventListener('click', () => document.getElementById('context-menu').style.display = 'none');
-
-        // Clock
-        function startClock() {
-            setInterval(() => {
-                const now = new Date();
-                document.getElementById('clock').innerText = now.toLocaleTimeString('lt-LT', {hour:'2-digit', minute:'2-digit'});
+    // 9. Matrix efektas (teksto keitimas)
+    function matrixEffect() {
+        const allButtons = document.querySelectorAll('button');
+        allButtons.forEach(btn => {
+            const oldText = btn.innerText;
+            btn.innerText = Math.random() > 0.5 ? '010101' : '101010';
+            btn.style.color = '#00ff41';
+            btn.style.borderColor = '#00ff41';
+            setTimeout(() => {
+                btn.innerText = oldText;
+                btn.style.color = ''; // Reset
+                btn.style.borderColor = '';
             }, 1000);
-        }
+        });
+        log('Įsilaužta į matricą...', 'HACK');
+    }
 
-        // Terminal Logic
-        function handleTerminal(input, e, winId) {
-            if(e.key === 'Enter') {
-                const val = input.value;
-                const out = document.getElementById('term-out-' + winId);
-                out.innerHTML += `<div>C:\\Users\\Admin> ${val}</div>`;
-                
-                let response = "";
-                if(val === 'help') response = "Komandos: help, date, clear, echo [text], version";
-                else if(val === 'date') response = new Date().toString();
-                else if(val === 'clear') out.innerHTML = "";
-                else if(val === 'version') response = "ZenithOS v1.0.5 (Build 2026)";
-                else if(val.startsWith('echo ')) response = val.substring(5);
-                else if(val !== 'clear') response = `Komanda '${val}' neatpažinta.`;
-
-                if(val !== 'clear') out.innerHTML += `<div style="color:#fff; margin-bottom:10px;">${response}</div>`;
-                
-                input.value = '';
-                // Auto scroll
-                const termContent = input.parentElement;
-                termContent.scrollTop = termContent.scrollHeight;
-            }
+    // 10. UI Sunaikinimas
+    function destroyPage() {
+        if(confirm("Ar tikrai norite ištrinti vartotojo sąsają?")) {
+            document.getElementById('controls').style.display = 'none';
+            log('Vartotojo sąsaja pašalinta. Prašome perkrauti.', 'CRITICAL');
+            document.body.style.backgroundColor = 'black';
         }
+    }
 
-        // Settings Logic
-        function changeBg(el) {
-            const bg = el.style.backgroundImage;
-            desktop.style.backgroundImage = bg;
-            loginScreen.style.backgroundImage = bg;
-        }
-        
-        function playSound(type) {
-            // Placeholder for sound effects logic
-        }
+    // 11. Reset
+    function resetSystem() {
+        location.reload();
+    }
+</script>
 
-    </script>
 </body>
 </html>
