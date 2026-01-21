@@ -3,254 +3,226 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>404.lt – Pamirštos vietos</title>
-    <meta name="description" content="404.lt – pamirštos ir slaptos vietos Lietuvoje. Interaktyvus žemėlapis, galerija ir istorijos." />
+    <title>VIBE CHECK // Tavo Karta</title>
     
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
     
     <style>
         :root {
-            --bg: #03070a;
-            --accent: #ff4c4c;
-            --accent-soft: rgba(255, 76, 76, 0.15);
-            --gold: #ff9f1c;
-            --text-main: #e9eef1;
-            --text-dim: #9aa3ad;
-            --glass: rgba(255, 255, 255, 0.03);
-            --glass-border: rgba(255, 255, 255, 0.08);
-            --trans: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            --primary: #F0FF42; /* Neoninė citrininė */
+            --bg: #000000;
+            --surface: #1A1A1A;
+            --text: #FFFFFF;
+            --accent: #5800FF; /* Elektros violetinė */
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
         body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg);
-            color: var(--text-main);
-            line-height: 1.6;
+            font-family: 'Space Mono', monospace;
+            background-color: var(--bg);
+            color: var(--text);
             overflow-x: hidden;
+            cursor: crosshair;
         }
 
-        h1, h2, h3, .logo { font-family: 'Space Grotesk', sans-serif; }
+        h1, h2, .logo { font-family: 'Unbounded', sans-serif; text-transform: uppercase; }
 
-        /* --- FONAS --- */
-        #bg-canvas {
+        /* --- TRIUKŠMO EFEKTAS (Overlay) --- */
+        .noise {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: -1; opacity: 0.4; pointer-events: none;
-        }
-
-        .aurora {
-            position: fixed; width: 100vw; height: 100vh;
-            background: radial-gradient(circle at 50% -20%, var(--accent-soft), transparent 50%);
-            z-index: -1; filter: blur(100px);
+            background: url('https://upload.wikimedia.org/wikipedia/commons/7/76/1k_Noise_Texture.png');
+            opacity: 0.05; pointer-events: none; z-index: 9999;
         }
 
         /* --- NAVIGACIJA --- */
-        header {
-            position: fixed; top: 0; width: 100%; z-index: 1000;
-            padding: 20px 5%; display: flex; justify-content: space-between; align-items: center;
-            backdrop-filter: blur(10px); background: rgba(3, 7, 10, 0.8);
-            border-bottom: 1px solid var(--glass-border);
+        nav {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 20px 40px; border-bottom: 2px solid var(--primary);
+            position: sticky; top: 0; background: var(--bg); z-index: 100;
         }
 
-        .logo { font-size: 24px; font-weight: 700; color: var(--accent); letter-spacing: 2px; }
-
-        nav a {
-            color: var(--text-dim); text-decoration: none; margin-left: 25px;
-            font-size: 14px; font-weight: 500; transition: var(--trans);
+        .logo { font-weight: 900; font-size: 1.5rem; color: var(--primary); }
+        .nav-links a { 
+            color: var(--text); text-decoration: none; margin-left: 20px; 
+            font-size: 0.9rem; transition: 0.3s;
         }
-        nav a:hover { color: var(--accent); }
+        .nav-links a:hover { color: var(--primary); text-decoration: underline; }
 
         /* --- HERO SEKCIJA --- */
         .hero {
-            height: 90vh; display: flex; flex-direction: column; justify-content: center;
-            align-items: center; text-align: center; padding: 0 20px;
+            height: 85vh; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; text-align: center;
+            padding: 40px; position: relative;
         }
 
-        .hero h1 {
-            font-size: clamp(40px, 8vw, 80px); line-height: 1; margin-bottom: 20px;
-            background: linear-gradient(to bottom, #fff 40%, var(--accent));
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        .hero h1 { 
+            font-size: clamp(3rem, 12vw, 10rem); line-height: 0.8; 
+            z-index: 2; mix-blend-mode: difference;
         }
 
-        .hero p { max-width: 600px; color: var(--text-dim); font-size: 18px; margin-bottom: 30px; }
-
-        .btn {
-            padding: 14px 32px; border-radius: 50px; border: none; font-weight: 700;
-            cursor: pointer; transition: var(--trans); text-decoration: none; display: inline-block;
+        .floating-img {
+            position: absolute; width: 300px; height: 400px;
+            background: url('https://images.unsplash.com/photo-1529139513402-e209979b1a8c?auto=format&fit=crop&w=800&q=80') center/cover;
+            top: 20%; right: 10%; opacity: 0.6; z-index: 1;
+            filter: grayscale(1); transition: 0.5s;
         }
-        .btn-primary { background: var(--accent); color: #000; }
-        .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 10px 30px var(--accent-soft); }
+        .hero:hover .floating-img { filter: grayscale(0); transform: scale(1.05); }
 
-        /* --- KONTEINERIAI --- */
-        .container { max-width: 1100px; margin: 80px auto; padding: 0 20px; }
+        /* --- BĖGANTI EILUTĖ --- */
+        .marquee {
+            background: var(--primary); color: #000; padding: 15px 0;
+            font-weight: 900; overflow: hidden; white-space: nowrap;
+            border-top: 2px solid #000; border-bottom: 2px solid #000;
+        }
+        .marquee div { display: inline-block; animation: marquee 20s linear infinite; }
+        @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+        /* --- TURINYS --- */
+        .container { padding: 80px 40px; max-width: 1400px; margin: 0 auto; }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px; }
+
+        .article-card {
+            background: var(--surface); padding: 0; position: relative;
+            border: 2px solid transparent; transition: 0.3s;
+        }
+        .article-card:hover { border-color: var(--accent); transform: translate(-10px, -10px); box-shadow: 10px 10px 0 var(--accent); }
+
+        .article-img { height: 250px; background-color: #333; overflow: hidden; }
+        .article-img img { width: 100%; height: 100%; object-fit: cover; filter: contrast(1.2); }
         
-        .card {
-            background: var(--glass); border: 1px solid var(--glass-border);
-            border-radius: 20px; padding: 40px; margin-bottom: 40px;
-            backdrop-filter: blur(5px); transition: var(--trans);
+        .article-info { padding: 25px; }
+        .tag { display: inline-block; background: var(--accent); padding: 2px 8px; font-size: 0.7rem; margin-bottom: 10px; }
+        .article-info h3 { font-size: 1.5rem; margin-bottom: 15px; }
+
+        /* --- INTERAKTYVI DALIS --- */
+        .vibe-meter {
+            background: var(--surface); border: 2px dashed var(--primary);
+            padding: 60px; text-align: center; margin-top: 100px;
         }
-        .card:hover { border-color: var(--accent); }
 
-        h3 { font-size: 28px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
-        h3::before { content: ''; width: 30px; height: 2px; background: var(--accent); display: inline-block; }
-
-        /* --- ŽEMĖLAPIS --- */
-        .map-frame {
-            width: 100%; height: 500px; border-radius: 15px; border: 1px solid var(--glass-border);
-            filter: grayscale(1) invert(0.9) contrast(1.2); transition: var(--trans);
+        #btn-vibe {
+            background: var(--primary); border: none; padding: 20px 40px;
+            font-family: 'Unbounded'; font-weight: 900; cursor: pointer;
+            font-size: 1.2rem; transition: 0.2s;
         }
-        .map-frame:hover { filter: grayscale(0.5) invert(0); }
+        #btn-vibe:active { transform: scale(0.9); }
 
-        /* --- SĄRAŠAS --- */
-        .secret-list { list-style: none; }
-        .secret-list li {
-            padding: 15px 0; border-bottom: 1px solid var(--glass-border);
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        .secret-list li span { color: var(--accent); font-family: monospace; }
+        footer { padding: 60px 40px; border-top: 1px solid #333; display: flex; justify-content: space-between; }
 
-        /* --- KONTAKTAI --- */
-        .contact-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 40px; }
-        input, textarea {
-            width: 100%; padding: 15px; background: rgba(255,255,255,0.05);
-            border: 1px solid var(--glass-border); border-radius: 10px; color: white; margin-bottom: 15px;
-        }
-        
-        /* --- SCROLL ANIMATION --- */
-        .reveal { opacity: 0; transform: translateY(30px); transition: all 0.8s ease-out; }
-        .reveal.active { opacity: 1; transform: translateY(0); }
-
+        /* --- MOBILE TWEAKS --- */
         @media (max-width: 768px) {
-            .contact-grid { grid-template-columns: 1fr; }
-            header nav { display: none; }
+            nav { padding: 20px; }
+            .hero h1 { font-size: 4rem; }
+            .floating-img { display: none; }
+            footer { flex-direction: column; gap: 20px; }
         }
     </style>
 </head>
 <body>
 
-    <canvas id="bg-canvas"></canvas>
-    <div class="aurora"></div>
+    <div class="noise"></div>
 
-    <header>
-        <div class="logo">404.LT</div>
-        <nav>
-            <a href="#map">Žemėlapis</a>
-            <a href="#secrets">Vietos</a>
-            <a href="#about">Apie</a>
-            <a href="#contact">Kontaktai</a>
-        </nav>
+    <nav>
+        <div class="logo">VIBE*CHECK</div>
+        <div class="nav-links">
+            <a href="#">MADA</a>
+            <a href="#">MUZIKA</a>
+            <a href="#">TECH</a>
+            <a href="#">STILIUS</a>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <div class="floating-img"></div>
+        <h1>TIKRAI<br><span style="color: var(--primary);">NE</span><br>FAKE.</h1>
+        <p style="margin-top: 30px; max-width: 400px; font-weight: bold;">Gen-Z balsas. Skaitmeninė kultūra be filtrų. Tik tai, kas svarbu dabar.</p>
     </header>
 
-    <section class="hero">
-        <h1>Pamiršta Lietuva</h1>
-        <p>Atraskime tai, kas liko laiko paraštėse. Industriniai griuvėsiai, slapti bunkeriai ir apleisti dvarai tavo ekrane.</p>
-        <div class="hero-btns">
-            <a href="#map" class="btn btn-primary">Atidaryti Žemėlapį</a>
+    <div class="marquee">
+        <div>
+            KAS NAUJO? // AI MENAS // SUSTAINABLE FASHION // VILNIUS NIGHTLIFE // CYBERPUNK 2026 // KAS NAUJO? // AI MENAS // SUSTAINABLE FASHION // VILNIUS NIGHTLIFE // CYBERPUNK 2026 //
         </div>
-    </section>
+    </div>
 
     <main class="container">
-        
-        <div id="map" class="card reveal">
-            <h3>Interaktyvus Žemėlapis</h3>
-            <iframe class="map-frame" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d147451.98394471715!2d25.112953258810057!3d54.700361250391345!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x46dd93fb5c6408f5%3A0x400d18c70e9dc40!2sVilnius!5e0!3m2!1slt!2slt!4v1700000000000!5m2!1slt!2slt" allowfullscreen="" loading="lazy"></iframe>
-        </div>
+        <div class="grid">
+            <div class="article-card">
+                <div class="article-img">
+                    <img src="https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=800&q=80" alt="Retro tech">
+                </div>
+                <div class="article-info">
+                    <span class="tag">TECH</span>
+                    <h3>Kodėl kasetės grįžta į madą?</h3>
+                    <p>Analoginis garsas vėl užkariauja mūsų ausines. Ar tai tik nostalgija?</p>
+                </div>
+            </div>
 
-        <div id="secrets" class="card reveal">
-            <h3>Slapti Taškai</h3>
-            <ul class="secret-list">
-                <li>Vilniaus Sporto Rūmai <span>54.691, 25.290</span></li>
-                <li>Apleista gamykla „Kuro aparatūra“ <span>54.712, 25.281</span></li>
-                <li>Vyriausybės svečių namai (Latvių g.) <span>54.695, 25.248</span></li>
-                <li>Geležinkelio tunelis (Paneriai) <span>54.632, 25.187</span></li>
-            </ul>
-        </div>
+            <div class="article-card">
+                <div class="article-img">
+                    <img src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=800&q=80" alt="Style">
+                </div>
+                <div class="article-info">
+                    <span class="tag">MADA</span>
+                    <h3>Gatvės stilius: Vilnius vs Berlin</h3>
+                    <p>Fiksuojame geriausius derinius gatvėse. Brutalizmas madoje.</p>
+                </div>
+            </div>
 
-        <div id="contact" class="card reveal">
-            <h3>Susisiekime</h3>
-            <div class="contact-grid">
-                <form action="#">
-                    <input type="text" placeholder="Vardas" required>
-                    <input type="email" placeholder="El. paštas" required>
-                    <textarea rows="5" placeholder="Tavo žinutė ar nauja vieta..."></textarea>
-                    <button type="submit" class="btn btn-primary">Siųsti žinutę</button>
-                </form>
-                <div class="contact-info">
-                    <p style="margin-bottom: 20px;">Turite informacijos apie naują apleistą objektą? Atsiųskite mums!</p>
-                    <p><strong>Discord:</strong> @leo001_001</p>
-                    <p><strong>TikTok:</strong> @abandon404_</p>
+            <div class="article-card">
+                <div class="article-img">
+                    <img src="https://images.unsplash.com/photo-1493225255756-d9584f8606e9?auto=format&fit=crop&w=800&q=80" alt="Music">
+                </div>
+                <div class="article-info">
+                    <span class="tag">MUZIKA</span>
+                    <h3>Hyper-pop ateitis</h3>
+                    <p>Nuo SOPHIE iki 100 gecs. Kaip garsas tapo skaitmeniniu chaosu.</p>
                 </div>
             </div>
         </div>
 
+        <section class="vibe-meter">
+            <h2 style="margin-bottom: 20px;">VIBE CHECKERIS</h2>
+            <p style="margin-bottom: 40px;">Ar tavo diena šiandien turi gerą vibe'ą?</p>
+            <button id="btn-vibe">PASPAUSK MANE</button>
+            <h1 id="vibe-result" style="margin-top: 30px; color: var(--primary);"></h1>
+        </section>
     </main>
 
-    <footer style="text-align: center; padding: 40px; color: var(--text-dim); border-top: 1px solid var(--glass-border);">
-        <p>&copy; 2026 404.LT – Urbanistinis tyrinėjimas</p>
+    <footer>
+        <div class="logo">VIBE*CHECK</div>
+        <div>
+            <p>Sek mus: @vibecheck.lt</p>
+            <p>2026 © Tavo Erdvė</p>
+        </div>
+        <div>
+            <p>Kontaktai: hello@vibecheck.lt</p>
+        </div>
     </footer>
 
     <script>
-        // --- Dalelių fonas (Canvas) ---
-        const canvas = document.getElementById('bg-canvas');
-        const ctx = canvas.getContext('2d');
-        let particles = [];
+        // Interaktyvus vibe tikrintojas
+        const vibeBtn = document.getElementById('btn-vibe');
+        const result = document.getElementById('vibe-result');
+        const vibes = ['100% LIT', 'NO CAP, GOOD', 'MID.', 'SLAY', 'FIRE 🔥', 'SUS.', 'CHILLIN'];
 
-        function initCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
+        vibeBtn.addEventListener('click', () => {
+            const randomVibe = vibes[Math.floor(Math.random() * vibes.length)];
+            result.innerText = randomVibe;
+            
+            // Atsitiktinė spalva rezultatui
+            const colors = ['#F0FF42', '#5800FF', '#FF0075', '#00FFC6'];
+            result.style.color = colors[Math.floor(Math.random() * colors.length)];
+        });
 
-        class Particle {
-            constructor() {
-                this.x = Math.random() * canvas.width;
-                this.y = Math.random() * canvas.height;
-                this.size = Math.random() * 2;
-                this.speedX = Math.random() * 0.5 - 0.25;
-                this.speedY = Math.random() * 0.5 - 0.25;
-            }
-            update() {
-                this.x += this.speedX;
-                this.y += this.speedY;
-                if (this.x > canvas.width) this.x = 0;
-                if (this.y > canvas.height) this.y = 0;
-            }
-            draw() {
-                ctx.fillStyle = 'rgba(255, 76, 76, 0.5)';
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
-
-        function createParticles() {
-            for (let i = 0; i < 100; i++) particles.push(new Particle());
-        }
-
-        function animate() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            particles.forEach(p => { p.update(); p.draw(); });
-            requestAnimationFrame(animate);
-        }
-
-        window.addEventListener('resize', initCanvas);
-        initCanvas();
-        createParticles();
-        animate();
-
-        // --- Scroll Reveal Animacija ---
-        function reveal() {
-            var reveals = document.querySelectorAll(".reveal");
-            for (var i = 0; i < reveals.length; i++) {
-                var windowHeight = window.innerHeight;
-                var elementTop = reveals[i].getBoundingClientRect().top;
-                if (elementTop < windowHeight - 100) {
-                    reveals[i].classList.add("active");
-                }
-            }
-        }
-        window.addEventListener("scroll", reveal);
-        reveal(); // Paleisti iškart patikrinimui
+        // Paprastas pelės judesio efektas hero antraštei
+        document.addEventListener('mousemove', (e) => {
+            const h1 = document.querySelector('.hero h1');
+            const moveX = (e.clientX - window.innerWidth / 2) / 50;
+            const moveY = (e.clientY - window.innerHeight / 2) / 50;
+            h1.style.transform = `translate(${moveX}px, ${moveY}px)`;
+        });
     </script>
 </body>
 </html>
