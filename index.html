@@ -216,6 +216,25 @@ main{ position:relative; z-index:12; padding-bottom:140px; }
 /* section card style */
 .section{ background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border-radius:12px; padding:22px; margin:34px auto; box-shadow:0 12px 40px rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.02); position:relative; overflow:visible; }
 
+   /* locked sections */
+.locked-section{ position:relative; }
+.locked-section .lock-content{ filter: blur(8px); pointer-events:none; user-select:none; transition: filter var(--trans); }
+.locked-section.unlocked .lock-content{ filter:none; pointer-events:auto; user-select:auto; }
+.lock-overlay{
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center; padding:18px;
+  background: rgba(3,6,9,0.78); backdrop-filter: blur(6px); z-index:20; text-align:center;
+}
+.locked-section.unlocked .lock-overlay{ opacity:0; pointer-events:none; visibility:hidden; transition: opacity var(--trans), visibility var(--trans); }
+.lock-panel{
+  max-width:360px; width:100%; padding:18px 20px; border-radius:14px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+  border:1px solid rgba(255,255,255,0.06); box-shadow: var(--shadow-1);
+}
+.lock-title{ font-weight:800; letter-spacing:.3px; }
+.lock-form{ display:flex; flex-wrap:wrap; gap:10px; margin-top:12px; justify-content:center; }
+.lock-form input{ flex:1 1 140px; min-width:120px; }
+.lock-status{ margin-top:10px; font-size:13px; color:#f7b2b2; min-height:18px; }
+
 /* subtle card hover 3d */
 .card{ background: linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.01)); border-radius:12px; padding:16px; transition: transform var(--trans), box-shadow var(--trans); box-shadow: 0 8px 26px rgba(0,0,0,0.45); }
 .card:hover{ transform: translateY(-8px) scale(1.01); box-shadow: 0 24px 60px rgba(0,0,0,0.6); }
@@ -326,15 +345,29 @@ footer{ margin-top:60px; padding:36px 18px; text-align:center; font-size:14px; c
   <!-- MAIN -->
   <main>
     <!-- MAP -->
-    <div id="map" class="container map-wrap section card" role="region" aria-label="Žemėlapis">
-      <iframe class="map-iframe" loading="lazy" src="https://www.google.com/maps/d/u/0/embed?mid=1g6gbNC7axAg9FBvBZgmwat0VT0WlPUs&ehbc=2E312F&noprof=1" title="404.lt žemėlapis"></iframe>
+   <div id="map" class="container map-wrap section card locked-section" role="region" aria-label="Žemėlapis" data-lock="2011">
+      <div class="lock-content">
+        <iframe class="map-iframe" loading="lazy" src="https://www.google.com/maps/d/u/0/embed?mid=1g6gbNC7axAg9FBvBZgmwat0VT0WlPUs&ehbc=2E312F&noprof=1" title="404.lt žemėlapis"></iframe>
+      </div>
+      <div class="lock-overlay" role="dialog" aria-label="Žemėlapis užrakintas">
+        <div class="lock-panel">
+          <div class="lock-title">🔒 Žemėlapis užrakintas</div>
+          <p style="color:#d6d6d6; margin-top:8px;">Įvesk slaptažodį, kad matytum žemėlapį.</p>
+          <form class="lock-form" data-lock-form>
+            <input type="password" inputmode="numeric" pattern="[0-9]*" placeholder="Slaptažodis" aria-label="Slaptažodis" required>
+            <button type="submit" class="btn primary ripple">Atrakinti</button>
+          </form>
+          <div class="lock-status" aria-live="polite"></div>
+        </div>
+      </div>
     </div>
 
     <!-- SLAPTOS VIETOS -->
-    <div id="secrets" class="container section card" role="region" aria-label="Slaptos vietos">
-      <h3 class="animated">🤫 Slaptos vietos 🤫</h3>
-      <p style="color:#d6d6d6; margin-top:8px;" class="animated">Apytikslus adresas — privatumas svarbus.</p>
-      <ul class="secret-list" style="margin-top:12px;">
+    <div id="secrets" class="container section card locked-section" role="region" aria-label="Slaptos vietos" data-lock="2011">
+      <div class="lock-content">
+        <h3 class="animated">🤫 Slaptos vietos 🤫</h3>
+        <p style="color:#d6d6d6; margin-top:8px;" class="animated">Apytikslus adresas — privatumas svarbus.</p>
+        <ul class="secret-list" style="margin-top:12px;">
         <li>#1 Vilniaus koncertų ir sporto rūmai - Rinktinės g. 1, 09200 Vilnius</li>
         <li>#1.1 Vilniaus sporto rūmų lauko baseine</li>
         <li>#2 Apleisti garažai - S. Vainiūno g., Vilnius, 01100 Vilniaus m. sav. - Gretima gatvelė</li>
@@ -396,7 +429,19 @@ footer{ margin-top:60px; padding:36px 18px; text-align:center; font-size:14px; c
   });
 })();
 </script>
-      </ul>
+   </ul>
+      </div>
+      <div class="lock-overlay" role="dialog" aria-label="Slaptos vietos užrakintos">
+        <div class="lock-panel">
+          <div class="lock-title">🔒 Slaptos vietos užrakintos</div>
+          <p style="color:#d6d6d6; margin-top:8px;">Įvesk slaptažodį, kad matytum visas vietas.</p>
+          <form class="lock-form" data-lock-form>
+            <input type="password" inputmode="numeric" pattern="[0-9]*" placeholder="Slaptažodis" aria-label="Slaptažodis" required>
+            <button type="submit" class="btn primary ripple">Atrakinti</button>
+          </form>
+          <div class="lock-status" aria-live="polite"></div>
+        </div>
+      </div>
     </div>
 
     <!-- ABOUT -->
@@ -601,6 +646,36 @@ function initReveals(){
   window.addEventListener('scroll', () => {
     if(window.scrollY > 32) header.classList.add('header-scrolled'); else header.classList.remove('header-scrolled');
   }, { passive:true });
+})();
+
+   /* =========================
+   Locked sections (password)
+   ========================= */
+(function lockedSections(){
+  const sections = document.querySelectorAll('.locked-section');
+  if(!sections.length) return;
+
+  sections.forEach(section => {
+    const password = section.dataset.lock || '';
+    const form = section.querySelector('[data-lock-form]');
+    const input = form ? form.querySelector('input[type="password"]') : null;
+    const status = section.querySelector('.lock-status');
+    if(!form || !input) return;
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const value = input.value.trim();
+      if(value === password){
+        section.classList.add('unlocked');
+        if(status) status.textContent = '';
+        input.value = '';
+      } else {
+        if(status) status.textContent = 'Neteisingas slaptažodis. Bandyk dar kartą.';
+        input.focus();
+        input.select();
+      }
+    });
+  });
 })();
 
 /* =========================
